@@ -506,11 +506,6 @@ export default class ArmorPatcher {
     patchArmorRating(armor: handle) {
         var rating = Math.floor(this.getArmorSlotMultiplier(armor) * this.getMaterialArmorModifier(armor) * this.getKeywordArmorModifier(armor));
 
-        const armorType = xelib.GetIntValue(armor, 'BOD2\\Armor Type');
-        if (armorType === 1) {
-            rating = rating * 1.5;
-        }
-
         if (rating !== 0) {
             xelib.SetValue(armor, 'DNAM', "".concat(String(rating)));
         } else if (rating === 0 && !xelib.GetFlag(armor, 'Record Header\\Record Flags', 'Non-Playable')) {
@@ -589,7 +584,7 @@ export default class ArmorPatcher {
         xelib.SetUIntValue(ingredient, 'CNTO\\Count', quantityIngredient1);
         xelib.AddElementValue(newRecipe, 'NAM1', '1');
         xelib.AddElementValue(newRecipe, 'CNAM', xelib.GetHexFormID(armor));
-        xelib.AddElementValue(newRecipe, 'BNAM', s.kwCraftingClothingStation);
+        xelib.AddElementValue(newRecipe, 'BNAM', s.kwCraftingTanningRack);
         var secondaryIngredients = [];
         secondaryIngredients.push(s.leatherStrips);
 
@@ -635,7 +630,7 @@ export default class ArmorPatcher {
         xelib.SetUIntValue(ingredient, 'CNTO\\Count', inputQuantity);
         xelib.AddElementValue(newRecipe, 'NAM1', "".concat(String(returnQuantity)));
         xelib.AddElementValue(newRecipe, 'CNAM', s.leatherStrips);
-        xelib.AddElementValue(newRecipe, 'BNAM', s.kwCraftingClothingStation);
+        xelib.AddElementValue(newRecipe, 'BNAM', s.kwCraftingTanningRack);
         xelib.AddElement(newRecipe, 'Conditions');
         var condition = xelib.GetElement(newRecipe, 'Conditions\\[0]');
         updateHasPerkCondition(newRecipe, condition, 10000000, 1, s.perkSmithingMeltdown);

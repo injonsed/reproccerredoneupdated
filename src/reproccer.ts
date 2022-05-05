@@ -81,7 +81,7 @@ var weaponSettings: WeaponSettings = {
 };
 
 var iconSettings: InteractionIconsSettings = {
-    enabled: true
+    enabled: false
 };
 
 var npcSettings: NPCSettings = {
@@ -156,7 +156,7 @@ export default class ReproccerReborn implements ZEditPatcher {
     }
 
     requiredFiles() {
-        return ['SkyRe_Main.esp', 'Poulet - Main.esp'];
+        return ['SkyRe_Main.esp'];
     }
 
     static buildRules(locals: any) {

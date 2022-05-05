@@ -699,7 +699,6 @@ export function FormIdList (GetHex: GetHextCallback) {
         kwCraftingSmithingForge: GetHex(0x088105, 'Skyrim.esm'),
         kwCraftingSmithingSharpeningWheel: GetHex(0x088108, 'Skyrim.esm'),
         kwCraftingTanningRack: GetHex(0x07866a, 'Skyrim.esm'),
-        kwCraftingClothingStation: GetHex(0x038964, 'Poulet - Main.esp'),
         kwJewelry: GetHex(0x08f95a, 'Skyrim.esm'),
         kwMasqueradeBandit: GetHex(0x03a8aa, 'SkyRe_Main.esp'),
         kwMasqueradeForsworn: GetHex(0x03a8a9, 'SkyRe_Main.esp'),

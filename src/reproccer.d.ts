@@ -265,7 +265,6 @@ declare class IFormIDList {
     kwCraftingSmithingForge: string;
     kwCraftingSmithingSharpeningWheel: string;
     kwCraftingTanningRack: string;
-    kwCraftingClothingStation: string;
     kwJewelry: string;
     kwMasqueradeBandit: string;
     kwMasqueradeForsworn: string;
