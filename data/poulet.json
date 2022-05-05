@@ -1,0 +1,8 @@
+{
+    "armor": {
+        "excludedFromRecipes": [
+            {"name": "Tome of", "edid": "MODTome"},
+            {"name": "Mask of", "edid": "ArmorDragonPriestMask"}
+        ]
+    }
+}

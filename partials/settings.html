@@ -1,0 +1,453 @@
+<style type="text/css">
+  input[type="number"] {
+    width: 40px;
+  }
+
+  details {
+    display: block;
+    border: 1px solid #f1f1f1;
+    box-shadow: 2px 3px 3px rgba(0, 0, 0, .2);
+  }
+
+  details summary {
+    padding: .3em;
+    cursor: pointer;
+  }
+
+  details summary a {
+    font-size: 1.5em;
+    vertical-align: middle;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+  }
+
+  .tooltip .tooltiptext {
+    visibility: hidden;
+    width: 500px;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -250px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+  }
+
+  .tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+  }
+</style>
+<script src="./npcPlugins.js"></script>
+
+<h2>Reproccer Reborn</h2>
+<p>Compatibility patch and weapon/armor/alchemy/projectile stat overhaul creator for T3nd0's Skyrim Redone</p>
+
+<p>
+  Use the settings below to toggle the patching of different content.<br />
+  Remember to re-run the patcher whenever you change your load order!
+</p>
+
+<section>
+  <ignore-plugins patcher-id="reproccerReborn"></ignore-plugins>
+</section>
+
+<section>
+  <div id="weaponsPatcher">
+    <label>
+      <input type="checkbox" ng-model="settings.reproccerReborn.weapons.enabled" /> Patch Weapons
+    </label>
+    <ul>
+      <li>Adjusts weapon stats as specified by Stats.json</li>
+      <li>Generates meltdown recipes and modifies tempering recipes.</li>
+      <li>Generates Refined Silver variants of silver weapons.</li>
+      <li>Generates crossbow variants of all crossbows.</li>
+      <li>Links mod-added weapons to Skyrim Redone's perks.</li>
+    </ul>
+
+    <details ng-if="settings.reproccerReborn.weapons.enabled">
+      <summary>Click here to configure patcher options</summary>
+      <p style="margin-left: 10px">Here you can tweak some weapon stats. Damage calculation formula is: <i>(baseDamage +
+          materialDamage + typeDamage) * modifier</i>.</p>
+      <ul>
+        <li>
+          <label>
+            <input min="1" max="100" step="1" type="number"
+              ng-model="settings.reproccerReborn.weapons.baseStats.damage.oneHanded" /> Base damage for one-handed
+            weapon
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Any one-handed weapon base damage used in the damage calculation formula.</span>
+            </div>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="1" max="100" step="1" type="number"
+              ng-model="settings.reproccerReborn.weapons.baseStats.damage.twoHanded" /> Base damage for two-handed
+            weapon
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Any two-handed weapon base damage used in the damage calculation formula.</span>
+            </div>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="1" max="100" step="1" type="number"
+              ng-model="settings.reproccerReborn.weapons.baseStats.damage.bow" /> Base damage for bow
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Base damage for any bows used in the damage calculation formula.</span>
+            </div>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="1" max="100" step="1" type="number"
+              ng-model="settings.reproccerReborn.weapons.baseStats.damage.crossbow" /> Base damage for crossbow
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Base damage for any crossbows used in the damage calculation formula.</span>
+            </div>
+          </label>
+        </li>
+        <li style="margin-left: 15px; margin-top: 5px;">
+          <label>
+            <input style="width: 50px" min="-10" max="100" step="1" type="number"
+              ng-model="settings.reproccerReborn.weapons.baseStats.damageBonuses.recurveCrossbow" /> Damage adjust for
+            recurve crossbow
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Recurve crossbow damage bonus that will be added to base damage. Can be
+                negative.</span>
+            </div>
+          </label>
+        </li>
+        <li style="margin-left: 15px">
+          <label>
+            <input style="width: 50px" min="-10" max="100" step="0.05" type="number"
+              ng-model="settings.reproccerReborn.weapons.baseStats.speedBonuses.arbalestCrossbow" /> Speed adjust for
+            arbalest crossbow
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Arbalest crossbow weight adjustment factor that will be added to base attack
+                speed. Can be negative.</span>
+            </div>
+          </label>
+        <li style="margin-left: 15px">
+          <label>
+            <input style="width: 50px" min="-10" max="100" step="0.05" type="number"
+              ng-model="settings.reproccerReborn.weapons.baseStats.speedBonuses.lightweightCrossbow" /> Speed adjust for
+            lightweight crossbow
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Lightwight crossbow speed adjustment factor that will be added to base attack
+                speed. Can be negative.</span>
+            </div>
+          </label>
+        </li>
+        <li style="margin-left: 15px">
+          <label>
+            <input style="width: 50px" min="-10" max="100" step="0.05" type="number"
+              ng-model="settings.reproccerReborn.weapons.baseStats.weightMultipliers.arbalestCrossbow" /> Weight adjust
+            for arbalest crossbow
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Arbalest crossbow weight adjustment factor that will be added to base weight.
+                Can be negative.</span>
+            </div>
+          </label>
+        <li style="margin-left: 15px; margin-bottom: 5px">
+          <label>
+            <input style="width: 50px" min="-10" max="100" step="0.05" type="number"
+              ng-model="settings.reproccerReborn.weapons.baseStats.weightMultipliers.lightweightCrossbow" /> Weight
+            adjust for lightweight crossbow
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Lightwight crossbow weight adjustment factor that will be added to base weight.
+                Can be negative.</span>
+            </div>
+          </label>
+        </li>
+      </ul>
+
+      <span style="margin-left: 10px">Adjusts the damage multipliers used when the below keywords are found.</span>
+      <div class="tooltip"><b>?</b>
+        <span class="tooltiptext">Weapon damage calculation results is further multiplied with factors below if relevant
+          keyword is found on weapon.</span>
+      </div>
+      <ul>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.weapons.modifiers.weaponStrongerLow" /> SkyRe_WeaponStrongerLow
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.weapons.modifiers.weaponStrongerMedium" /> SkyRe_WeaponStrongerMedium
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.weapons.modifiers.weaponStrongerHigh" /> SkyRe_WeaponStrongerHigh
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.weapons.modifiers.weaponWeakerLow" /> SkyRe_WeaponWeakerLow
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.weapons.modifiers.weaponWeakerMedium" /> SkyRe_WeaponWeakerMedium
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.weapons.modifiers.weaponWeakerHigh" /> SkyRe_WeaponWeakerHigh
+          </label>
+        </li>
+      </ul>
+  </div>
+  </br>
+  <div id="armorPatcher">
+    <label>
+      <input type="checkbox" ng-model="settings.reproccerReborn.armor.enabled" /> Patch Armor
+    </label>
+    <ul>
+      <li>Adjusts armor stats as specified by Stats.json.</li>
+      <li>Generates meltdown recipes and modifies tempering recipes</li>
+      <li>Sets armor cap and armor protection per value. </li>
+      <li>Generates dreamcloth variants of regular clothing pieces.</li>
+    </ul>
+
+    <details ng-if="settings.reproccerReborn.armor.enabled">
+      <summary>Click here to configure patcher options</summary>
+      <p style="margin-left: 10px">Here you can globally tweak armor fast. The formula for each piece's armor value is:
+        <i>Armor = ArmorFactorSlot * ArmorMaterial</i>.
+      </p>
+
+      <ul>
+        <li>
+          <label>
+            <input min="1" max="100" step="1" type="number"
+              ng-model="settings.reproccerReborn.armor.baseStats.maxProtection" /> Maximum damage reduction
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">The maximum amount of physical damage reduction from armor, in percent. With 90,
+                90% of damage reduction is possible.</span>
+            </div>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.baseStats.protectionPerArmor" /> Damage reduction per armor point
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">This is the percentage of physical damage blocked per point of armor.</br>A
+                value of 0.1 means that you need 10 armor for 1% physical damage reduction.</span>
+            </div>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.baseStats.multipliers.boots" /> Armor factor for boots
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Any boots' armor value is multiplied with this factor.</span>
+            </div>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.baseStats.multipliers.cuirass" /> Armor factor for cuirass
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Any cuirass's armor value is multiplied with this factor.</span>
+            </div>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.baseStats.multipliers.gauntlets" /> Armor factor for gauntlets
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Any gauntlet's armor value is multiplied with this factor.</span>
+            </div>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.baseStats.multipliers.helmet" /> Armor factor for helmet
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Any helmet's armor value is multiplied with this factor.</span>
+            </div>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.baseStats.multipliers.shield" /> Armor factor for shield
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Any shield's armor value is multiplied with this factor.</span>
+            </div>
+          </label>
+        </li>
+      </ul>
+
+      <span style="margin-left: 10px">Adjusts the armor multipliers used when the below keywords are found.</span>
+      <div class="tooltip"><b>?</b>
+        <span class="tooltiptext">Armor calculation results is further multiplied with factors below if relevant keyword
+          is found on armor.</span>
+      </div>
+      <ul>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.modifiers.armorStrongerLow" /> SkyRe_ArmorStrongerLow
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.modifiers.armorStrongerMedium" /> SkyRe_ArmorStrongerMedium
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.modifiers.armorStrongerHigh" /> SkyRe_ArmorStrongerHigh
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.modifiers.armorWeakerLow" /> SkyRe_ArmorWeakerLow
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.modifiers.armorWeakerMedium" /> SkyRe_ArmorWeakerMedium
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="0.1" step="0.1" type="number"
+              ng-model="settings.reproccerReborn.armor.modifiers.armorWeakerHigh" /> SkyRe_ArmorWeakerHigh
+          </label>
+        </li>
+      </ul>
+    </details>
+  </div>
+  </br>
+  <div id="alchemyPatcher">
+    <label>
+      <input type="checkbox" ng-model="settings.reproccerReborn.alchemy.enabled" /> Patch Alchemy Ingredients
+    </label>
+    <ul>
+      <li>Adjusts alchemy ingredients to work over time.</li>
+      <li>Optionally enforces upper and lower price limits for ingredients.</li>
+    </ul>
+
+    <details ng-if="settings.reproccerReborn.alchemy.enabled">
+      <summary>Click here to configure patcher options</summary>
+      <p style="margin-left: 10px">Here you can tweak base effect duration and prices caps.</p>
+      <ul>
+        <label>
+          <input type="checkbox" ng-model="settings.reproccerReborn.alchemy.baseStats.usePriceLimits" /> Use price
+          limits
+          <div class="tooltip"><b>?</b>
+            <span class="tooltiptext">Turn off/on ingredients' price limits.</span>
+          </div>
+        </label>
+        <li ng-if="settings.reproccerReborn.alchemy.baseStats.usePriceLimits">
+          <label>
+            <input min="1" step="1" type="number"
+              ng-model="settings.reproccerReborn.alchemy.baseStats.priceLimits.lower" /> Lower limit of ingredient price
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Base price of any ingredient will not be lower than this value.</span>
+            </div>
+          </label>
+        </li>
+        <li ng-if="settings.reproccerReborn.alchemy.baseStats.usePriceLimits">
+          <label>
+            <input min="1" step="1" type="number"
+              ng-model="settings.reproccerReborn.alchemy.baseStats.priceLimits.upper" /> Upper limit of ingredient price
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Base price of any ingredient will not be higher than this value.</span>
+            </div>
+          </label>
+        </li>
+        <li>
+          <label>
+            <input min="1" step="1" type="number" ng-model="settings.reproccerReborn.alchemy.baseStats.duration" /> Base
+            duration for all effects
+            <div class="tooltip"><b>?</b>
+              <span class="tooltiptext">Duration of any effect in ingredients will not be lower than this value.</span>
+            </div>
+          </label>
+        </li>
+      </ul>
+    </details>
+    </br ng-if="settings.reproccerReborn.alchemy.enabled">
+  </div>
+  <div id="projectilePatcher">
+    <label>
+      <input type="checkbox" ng-model="settings.reproccerReborn.projectiles.enabled" /> Patch Projectiles
+    </label>
+    <ul>
+      <li>Adjusts both arrow and bolt speed, gravity influence, reach, and damage. </li>
+      <li>Creates explosive, timebomb, barbed, elemental, strong and stronger variants if applicable.</li>
+    </ul>
+  </div>
+  </br>
+  <div id="iconsPatcher">
+    <label>
+      <input type="checkbox" ng-model="settings.reproccerReborn.icons.enabled" /> Use interaction icons
+    </label>
+    <ul>
+      <li>Replace all text on active objects and flora with interaction icons from Oblivion Interaction icons mode </li>
+      <li><a
+          href="https://www.nexusmods.com/skyrimspecialedition/mods/52743">https://www.nexusmods.com/skyrimspecialedition/mods/52743</a>
+      </li>
+    </ul>
+  </div>
+  </br>
+  <div id="npcPatcher">
+    <label>
+      <input type="checkbox" ng-model="settings.reproccerReborn.npc.enabled" /> Merge NPC
+    </label>
+    <span ng-if="settings.reproccerReborn.npc.enabled">
+      <span>
+        NPC plugins list (all changes will be saved)
+      </span>
+      <button class="action-btn small positive" ng-click="addPlugin()">Add</button>
+      <div class="ignored-plugins-container">
+        <div ng-repeat="item in plugins">
+          <input type="text" ng-model="item.filename" ng-change="onChange()" />
+          <span class="remove-item" ng-click="removePlugin($index)" title="Remove"></span>
+        </div>
+      </div>
+    </span>
+  </div>
+
+</section>

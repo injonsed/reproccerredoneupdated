@@ -1,0 +1,18 @@
+{
+  "weapons": {
+    "materials": [{ "damage": 3, "name": "Weakened Trinity Blade" }],
+    "materialOverrides": [
+      { "substring": "Shiv", "material": "IRON" },
+      { "substring": "Weakened Trinity Blade", "material": "EBONY" },
+      { "substring": "Trinity Blade", "material": "EBONY" }
+    ]
+  }, 
+  "armor": {
+    "materialOverrides": [
+      { "substring": "Griffith", "material": "LEATHER" },
+      { "substring": "Elenthil", "material": "LEATHER" },  
+      { "substring": "Blood of Skyrim", "material": "GUARD" },
+      { "substring": "Gabania Guard", "material": "GUARD" }
+    ]
+  }
+}

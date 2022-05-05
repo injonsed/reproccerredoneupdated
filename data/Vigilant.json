@@ -1,0 +1,5 @@
+{
+  "weapons": {
+    "materialOverrides": [{ "substring": "Bard's Dagger", "material": "DRAGONBONE" }]
+  }
+}

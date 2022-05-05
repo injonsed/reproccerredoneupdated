@@ -1,0 +1,9 @@
+{
+    "scripts": {
+        "build": "esbuild ./src/init.ts --bundle --outfile=index.js",
+        "watch": "esbuild ./src/init.ts --bundle --outfile=index.js --watch"
+    },
+    "dependencies": {
+        "esbuild": "^0.14.38"
+    }
+}
