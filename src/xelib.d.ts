@@ -111,8 +111,3 @@ declare namespace xelib {
 declare namespace fh {
     function loadJsonFile(path: string, options: any): Object
 }
-
-declare namespace ngapp {
-    function directive(name: string, cb: Function);
-    function controller(name: string, init: Function);
-}

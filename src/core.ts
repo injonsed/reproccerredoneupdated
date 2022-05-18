@@ -320,6 +320,19 @@ export function removeTemperingConditions(h: handle, arr: Array<MaterialMap>, pe
     return condition;
 }
 
+export function getKeyword(elem: handle, val: string): string {
+    const items = xelib.GetElements(elem, 'KWDA', false);
+    var path: string;
+
+    const res = items.some((v, i) => {
+        path = `KWDA\\[${i}]`;
+        return xelib.GetValue(elem, path).includes(val);
+    });
+    if (res)
+        return path;
+    else
+        return null;
+}
 
 function isMergeableObject(value: any): boolean {
     return isNonNullObject(value) && !isSpecial(value);
@@ -458,8 +471,8 @@ export const Records = {
     /**
      * Value: object
     */
-   Configuration: 'ACBS',
-   ConfigurationFlags: 'ACBS\\Flags',
+    Configuration: 'ACBS',
+    ConfigurationFlags: 'ACBS\\Flags',
     /** Value: handle */
     AttackRace: 'ATKR',
     /**
@@ -501,6 +514,10 @@ export const Records = {
     ShortName: 'SHRT',
     /** Value: string */
     Description: 'DESC',
+    /** Object */
+    Data: 'DNAM',
+    /** Value: string */
+    DataSkill: 'DNAM\\Skill',
     /** Object */
     PlayerSkills: 'DNAM',
     /**
@@ -570,264 +587,285 @@ export const Records = {
 
 };
 
-export function FormIdList (GetHex: GetHextCallback) {
-    return {
-        armorStrongerLow: GetHex(0x000666, 'Update.esm'),
-        armorStrongerMedium: GetHex(0x000667, 'Update.esm'),
-        armorStrongerHigh: GetHex(0x000668, 'Update.esm'),
-        armorWeakerLow: GetHex(0x000669, 'Update.esm'),
-        armorWeakerMedium: GetHex(0x00066a, 'Update.esm'),
-        armorWeakerHigh: GetHex(0x00066b, 'Update.esm'),
-        // Weapon Modifiers
-        weaponStrongerLow: GetHex(0x000660, 'Update.esm'),
-        weaponStrongerMedium: GetHex(0x000661, 'Update.esm'),
-        weaponStrongerHigh: GetHex(0x000662, 'Update.esm'),
-        weaponWeakerLow: GetHex(0x000663, 'Update.esm'),
-        weaponWeakerMedium: GetHex(0x000664, 'Update.esm'),
-        weaponWeakerHigh: GetHex(0x000665, 'Update.esm'),
-        excludeFromMeltdownRecipes: GetHex(0x000650, 'Update.esm'),
-        // Explosions
-        expBarbed: GetHex(0x0c3421, 'SkyRe_Main.esp'),
-        expElementalFire: GetHex(0x010d90, 'Dawnguard.esm'),
-        expElementalFrost: GetHex(0x010d91, 'Dawnguard.esm'),
-        expElementalShock: GetHex(0x010d92, 'Dawnguard.esm'),
-        expExploding: GetHex(0x00f952, 'SkyRe_Main.esp'),
-        expHeavyweight: GetHex(0x3df04c, 'SkyRe_Main.esp'),
-        expNoisemaker: GetHex(0x03a323, 'SkyRe_Main.esp'),
-        expNeuralgia: GetHex(0x3df04f, 'SkyRe_Main.esp'),
-        expTimebomb: GetHex(0x00f944, 'SkyRe_Main.esp'),
-        // Game Settings
-        gmstArmorScalingFactor: GetHex(0x021a72, 'Skyrim.esm'),
-        gmstMaxArmorRating: GetHex(0x037deb, 'Skyrim.esm'),
-        // Items
-        ingotCorundum: GetHex(0x05ad93, 'Skyrim.esm'),
-        ingotDwarven: GetHex(0x0db8a2, 'Skyrim.esm'),
-        ingotEbony: GetHex(0x05ad9d, 'Skyrim.esm'),
-        ingotGold: GetHex(0x05ad9e, 'Skyrim.esm'),
-        ingotIron: GetHex(0x05ace4, 'Skyrim.esm'),
-        ingotMalachite: GetHex(0x05ada1, 'Skyrim.esm'),
-        ingotMoonstone: GetHex(0x05ad9f, 'Skyrim.esm'),
-        ingotOrichalcum: GetHex(0x05ad99, 'Skyrim.esm'),
-        ingotQuicksilver: GetHex(0x05ada0, 'Skyrim.esm'),
-        ingotSilver: GetHex(0x05ace3, 'Skyrim.esm'),
-        ingotSteel: GetHex(0x05ace5, 'Skyrim.esm'),
-        ale: GetHex(0x034c5e, 'Skyrim.esm'),
-        boneMeal: GetHex(0x034cdd, 'Skyrim.esm'),
-        charcoal: GetHex(0x033760, 'Skyrim.esm'),
-        chaurusChitin: GetHex(0x03ad57, 'Skyrim.esm'),
-        chitinPlate: GetHex(0x02b04e, 'Dragonborn.esm'),
-        deathBell: GetHex(0x0516c8, 'Skyrim.esm'),
-        dragonbone: GetHex(0x03ada4, 'Skyrim.esm'),
-        dragonscale: GetHex(0x03ada3, 'Skyrim.esm'),
-        fireSalt: GetHex(0x03ad5e, 'Skyrim.esm'),
-        firewood: GetHex(0x06f993, 'Skyrim.esm'),
-        frostSalt: GetHex(0x03ad5f, 'Skyrim.esm'),
-        leather: GetHex(0x0db5d2, 'Skyrim.esm'),
-        leatherStrips: GetHex(0x0800e4, 'Skyrim.esm'),
-        netchLeather: GetHex(0x01cd7c, 'Dragonborn.esm'),
-        oreStalhrim: GetHex(0x02b06b, 'Dragonborn.esm'),
-        pettySoulGem: GetHex(0x02e4e2, 'Skyrim.esm'),
-        torchbugThorax: GetHex(0x04da73, 'Skyrim.esm'),
-        voidSalt: GetHex(0x03ad60, 'Skyrim.esm'),
-        // Keywords
-        kwClothingHands: GetHex(0x10cd13, 'Skyrim.esm'),
-        kwClothingHead: GetHex(0x10cd11, 'Skyrim.esm'),
-        kwClothingFeet: GetHex(0x10cd12, 'Skyrim.esm'),
-        kwClothingBody: GetHex(0x0a8657, 'Skyrim.esm'),
-        kwArmorClothing: GetHex(0x06bbe8, 'Skyrim.esm'),
-        kwArmorHeavy: GetHex(0x06bbd2, 'Skyrim.esm'),
-        kwArmorLight: GetHex(0x06bbd3, 'Skyrim.esm'),
-        kwArmorDreamcloth: GetHex(0x05c2c4, 'SkyRe_Main.esp'),
-        // Keywords - Armor Materials
-        kwArmorMaterialBlades: GetHex(0x0009c0, 'Update.esm'),
-        kwArmorMaterialDaedric: GetHex(0x06bbd4, 'Skyrim.esm'),
-        kwArmorMaterialDarkBrotherhood: GetHex(0x10fd62, 'Skyrim.esm'),
-        kwArmorMaterialDawnguard: GetHex(0x012ccd, 'Dawnguard.esm'),
-        kwArmorMaterialDragonplate: GetHex(0x06bbd5, 'Skyrim.esm'),
-        kwArmorMaterialDragonscale: GetHex(0x06bbd6, 'Skyrim.esm'),
-        kwArmorMaterialDwarven: GetHex(0x06bbd7, 'Skyrim.esm'),
-        kwArmorMaterialEbony: GetHex(0x06bbd8, 'Skyrim.esm'),
-        kwArmorMaterialElven: GetHex(0x06bbd9, 'Skyrim.esm'),
-        kwArmorMaterialElvenGilded: GetHex(0x06bbda, 'Skyrim.esm'),
-        kwArmorMaterialFalmerHardened: GetHex(0x012cce, 'Dawnguard.esm'),
-        kwArmorMaterialFalmerHeavy: GetHex(0x012ccf, 'Dawnguard.esm'),
-        kwArmorMaterialFalmerHeavyOriginal: GetHex(0x012cd0, 'Dawnguard.esm'),
-        kwArmorMaterialForsworn: GetHex(0x0009b9, 'Update.esm'),
-        kwArmorMaterialFur: GetHex(0x008254, 'SkyRe_Main.esp'),
-        kwArmorMaterialGlass: GetHex(0x06bbdc, 'Skyrim.esm'),
-        kwArmorMaterialHide: GetHex(0x06bbdd, 'Skyrim.esm'),
-        kwArmorMaterialHunter: GetHex(0x0050c4, 'Dawnguard.esm'),
-        kwArmorMaterialImperialHeavy: GetHex(0x06bbe2, 'Skyrim.esm'),
-        kwArmorMaterialImperialLight: GetHex(0x06bbe0, 'Skyrim.esm'),
-        kwArmorMaterialImperialStudded: GetHex(0x06bbe1, 'Skyrim.esm'),
-        kwArmorMaterialIron: GetHex(0x06bbe3, 'Skyrim.esm'),
-        kwArmorMaterialIronBanded: GetHex(0x06bbe4, 'Skyrim.esm'),
-        kwArmorMaterialLeather: GetHex(0x06bbdb, 'Skyrim.esm'),
-        kwArmorMaterialNightingale: GetHex(0x10fd61, 'Skyrim.esm'),
-        kwArmorMaterialNordicHeavy: GetHex(0x024105, 'Dragonborn.esm'),
-        kwArmorMaterialOrcish: GetHex(0x06bbe5, 'Skyrim.esm'),
-        kwArmorMaterialScaled: GetHex(0x06bbde, 'Skyrim.esm'),
-        kwArmorMaterialStalhrimHeavy: GetHex(0x024106, 'Dragonborn.esm'),
-        kwArmorMaterialStalhrimLight: GetHex(0x024107, 'Dragonborn.esm'),
-        kwArmorMaterialSteel: GetHex(0x06bbe6, 'Skyrim.esm'),
-        kwArmorMaterialSteelPlate: GetHex(0x06bbe7, 'Skyrim.esm'),
-        kwArmorMaterialStormcloak: GetHex(0x0ac13a, 'Skyrim.esm'),
-        kwArmorMaterialStudded: GetHex(0x06bbdf, 'Skyrim.esm'),
-        kwArmorMaterialThievesGuild: GetHex(0x0009bc, 'Update.esm'),
-        kwArmorMaterialVampire: GetHex(0x01463e, 'Dawnguard.esm'),
-        kwDLC1ArmorMaterialDawnguard: GetHex(0x012ccd, 'Dawnguard.esm'),
-        kwDLC1ArmorMaterialHunter: GetHex(0x0050c4, 'Dawnguard.esm'),
-        kwDLC2ArmorMaterialChitinLight: GetHex(0x024102, 'Dragonborn.esm'),
-        kwDLC2ArmorMaterialChitinHeavy: GetHex(0x024103, 'Dragonborn.esm'),
-        kwDLC2ArmorMaterialBonemoldLight: GetHex(0x024100, 'Dragonborn.esm'),
-        kwDLC2ArmorMaterialBonemoldHeavy: GetHex(0x024101, 'Dragonborn.esm'),
-        kwWAF_ArmorMaterialDraugr: GetHex(0xaf0135, 'Update.esm'),
-        kwWAF_ArmorMaterialGuard: GetHex(0xaf0112, 'Update.esm'),
-        kwWAF_ArmorMaterialThalmor: GetHex(0xaf0222, 'Update.esm'),
-        kwWAF_ArmorWolf: GetHex(0xaf0107, 'Update.esm'),
-        kwWAF_DLC1ArmorDawnguardHeavy: GetHex(0xaf0117, 'Update.esm'),
-        kwWAF_DLC1ArmorDawnguardLight: GetHex(0xaf0118, 'Update.esm'),
-        kwArmorShieldHeavy: GetHex(0x08f265, 'SkyRe_Main.esp'),
-        kwArmorShieldLight: GetHex(0x08f266, 'SkyRe_Main.esp'),
-        kwArmorSlotGauntlets: GetHex(0x06c0ef, 'Skyrim.esm'),
-        kwArmorSlotHelmet: GetHex(0x06c0ee, 'Skyrim.esm'),
-        kwArmorSlotBoots: GetHex(0x06c0ed, 'Skyrim.esm'),
-        kwArmorSlotCuirass: GetHex(0x06c0ec, 'Skyrim.esm'),
-        kwArmorSlotShield: GetHex(0x0965b2, 'Skyrim.esm'),
-        kwCraftingSmelter: GetHex(0x0a5cce, 'Skyrim.esm'),
-        kwCraftingSmithingArmorTable: GetHex(0x0adb78, 'Skyrim.esm'),
-        kwCraftingSmithingForge: GetHex(0x088105, 'Skyrim.esm'),
-        kwCraftingSmithingSharpeningWheel: GetHex(0x088108, 'Skyrim.esm'),
-        kwCraftingTanningRack: GetHex(0x07866a, 'Skyrim.esm'),
-        kwCraftingClothingStation: GetHex(0x038964, 'Poulet - Main.esp'),
-        kwJewelry: GetHex(0x08f95a, 'Skyrim.esm'),
-        kwMasqueradeBandit: GetHex(0x03a8aa, 'SkyRe_Main.esp'),
-        kwMasqueradeForsworn: GetHex(0x03a8a9, 'SkyRe_Main.esp'),
-        kwMasqueradeImperial: GetHex(0x037d31, 'SkyRe_Main.esp'),
-        kwMasqueradeStormcloak: GetHex(0x037d2f, 'SkyRe_Main.esp'),
-        kwMasqueradeThalmor: GetHex(0x037d2b, 'SkyRe_Main.esp'),
-        kwVendorItemClothing: GetHex(0x08f95b, 'Skyrim.esm'),
-        // Keywords - Weapon Materials
-        kwWAF_WeapMaterialBlades: GetHex(0xaf0103, 'Update.esm'),
-        kwWAF_WeapMaterialForsworn: GetHex(0xaf0104, 'Update.esm'),
-        kwWAF_DLC1WeapMaterialDawnguard: GetHex(0xaf0116, 'Update.esm'),
-        kwWAF_TreatAsMaterialDaedric: GetHex(0xaf0217, 'Update.esm'),
-        kwWAF_TreatAsMaterialDragon: GetHex(0xaf0216, 'Update.esm'),
-        kwWAF_TreatAsMaterialDwarven: GetHex(0xaf0211, 'Update.esm'),
-        kwWAF_TreatAsMaterialEbony: GetHex(0xaf0215, 'Update.esm'),
-        kwWAF_TreatAsMaterialElven: GetHex(0xaf0212, 'Update.esm'),
-        kwWAF_TreatAsMaterialGlass: GetHex(0xaf0214, 'Update.esm'),
-        kwWAF_TreatAsMaterialIron: GetHex(0xaf0209, 'Update.esm'),
-        kwWAF_TreatAsMaterialLeather: GetHex(0xaf0219, 'Update.esm'),
-        kwWAF_TreatAsMaterialOrcish: GetHex(0xaf0213, 'Update.esm'),
-        kwWAF_TreatAsMaterialSteel: GetHex(0xaf0210, 'Update.esm'),
-        kwDLC2WeaponMaterialStalhrim: GetHex(0x02622f, 'Dragonborn.esm'),
-        kwWeapMaterialDaedric: GetHex(0x01e71f, 'Skyrim.esm'),
-        kwWeapMaterialDragonbone: GetHex(0x019822, 'Dawnguard.esm'),
-        kwWeapMaterialDraugr: GetHex(0x0c5c01, 'Skyrim.esm'),
-        kwWeapMaterialDraugrHoned: GetHex(0x0c5c02, 'Skyrim.esm'),
-        kwWeapMaterialDwarven: GetHex(0x01e71a, 'Skyrim.esm'),
-        kwWeapMaterialEbony: GetHex(0x01e71e, 'Skyrim.esm'),
-        kwWeapMaterialElven: GetHex(0x01e71b, 'Skyrim.esm'),
-        kwWeapMaterialFalmer: GetHex(0x0c5c03, 'Skyrim.esm'),
-        kwWeapMaterialFalmerHoned: GetHex(0x0c5c04, 'Skyrim.esm'),
-        kwWeapMaterialGlass: GetHex(0x01e71d, 'Skyrim.esm'),
-        kwWeapMaterialImperial: GetHex(0x0c5c00, 'Skyrim.esm'),
-        kwWeapMaterialIron: GetHex(0x01e718, 'Skyrim.esm'),
-        kwWeapMaterialNordic: GetHex(0x026230, 'Dragonborn.esm'),
-        kwWeapMaterialOrcish: GetHex(0x01e71c, 'Skyrim.esm'),
-        kwWeapMaterialSilver: GetHex(0x10aa1a, 'Skyrim.esm'),
-        kwWeapMaterialSilverRefined: GetHex(0x24f987, 'SkyRe_Main.esp'),
-        kwWeapMaterialSteel: GetHex(0x01e719, 'Skyrim.esm'),
-        kwWeapMaterialWood: GetHex(0x01e717, 'Skyrim.esm'),
-        // Keywords - Weapon Types
-        kwWeapTypeBastardSword: GetHex(0x054ff1, 'SkyRe_Main.esp'),
-        kwWeapTypeBattleaxe: GetHex(0x06d932, 'Skyrim.esm'),
-        kwWeapTypeBattlestaff: GetHex(0x020857, 'SkyRe_Main.esp'),
-        kwWeapTypeBoundWeapon: GetHex(0x00f3e1, 'SkyRe_Main.esp'),
-        kwWeapTypeBow: GetHex(0x01e715, 'Skyrim.esm'),
-        kwWeapTypeBroadsword: GetHex(0x05451f, 'SkyRe_Main.esp'),
-        kwWeapTypeClub: GetHex(0x09ba23, 'SkyRe_Main.esp'),
-        kwWeapTypeCrossbow: GetHex(0x06f3fd, 'Skyrim.esm'),
-        kwWeapTypeDagger: GetHex(0x01e713, 'Skyrim.esm'),
-        kwWeapTypeGlaive: GetHex(0x09ba40, 'SkyRe_Main.esp'),
-        kwWeapTypeGreatsword: GetHex(0x06d931, 'Skyrim.esm'),
-        kwWeapTypeHalberd: GetHex(0x09ba3e, 'SkyRe_Main.esp'),
-        kwWeapTypeHatchet: GetHex(0x333676, 'SkyRe_Main.esp'),
-        kwWeapTypeKatana: GetHex(0x054523, 'SkyRe_Main.esp'),
-        kwWeapTypeLongbow: GetHex(0x06f3fe, 'Skyrim.esm'),
-        kwWeapTypeLongmace: GetHex(0x0a068f, 'SkyRe_Main.esp'),
-        kwWeapTypeLongsword: GetHex(0x054520, 'SkyRe_Main.esp'),
-        kwWeapTypeMace: GetHex(0x01e714, 'Skyrim.esm'),
-        kwWeapTypeMaul: GetHex(0x333677, 'SkyRe_Main.esp'),
-        kwWeapTypeNodachi: GetHex(0x054a88, 'SkyRe_Main.esp'),
-        kwWeapTypeSaber: GetHex(0x054a87, 'SkyRe_Main.esp'),
-        kwWeapTypeScimitar: GetHex(0x054a87, 'SkyRe_Main.esp'),
-        kwWeapTypeShortbow: GetHex(0x056b5f, 'SkyRe_Main.esp'),
-        kwWeapTypeShortspear: GetHex(0x1ac2b9, 'SkyRe_Main.esp'),
-        kwWeapTypeShortsword: GetHex(0x085067, 'SkyRe_Main.esp'),
-        kwWeapTypeStaff: GetHex(0x01e716, 'Skyrim.esm'),
-        kwWeapTypeSword: GetHex(0x01e711, 'Skyrim.esm'),
-        kwWeapTypeTanto: GetHex(0x054522, 'SkyRe_Main.esp'),
-        kwWeapTypeUnarmed: GetHex(0x066f62, 'SkyRe_Main.esp'),
-        kwWeapTypeWakizashi: GetHex(0x054521, 'SkyRe_Main.esp'),
-        kwWeapTypeWaraxe: GetHex(0x01e712, 'Skyrim.esm'),
-        kwWeapTypeWarhammer: GetHex(0x06d930, 'Skyrim.esm'),
-        kwWeapTypeYari: GetHex(0x09ba3f, 'SkyRe_Main.esp'),
-        // Other keywords
-        kwDLC1CrossbowIsEnhanced: GetHex(0x00399c, 'Dawnguard.esm'),
-        kwMagicDisallowEnchanting: GetHex(0x0c27bd, 'Skyrim.esm'),
-        // Activator keywords
-        kwActivatorLever: GetHex(0x06DEAD, 'Skyrim.esm'),
-        // Lights
-        lightLightsource: GetHex(0x03a335, 'SkyRe_Main.esp'),
-        // Perks
-        perkAlchemyFuse: GetHex(0x00feda, 'SkyRe_Main.esp'),
-        perkAlchemyAdvancedExplosives: GetHex(0x00fed9, 'SkyRe_Main.esp'),
-        perkDreamclothBody: GetHex(0x5cda5, 'SkyRe_Main.esp'),
-        perkDreamclothHands: GetHex(0x5cda8, 'SkyRe_Main.esp'),
-        perkDreamclothHead: GetHex(0x5cda4, 'SkyRe_Main.esp'),
-        perkDreamclothFeet: GetHex(0x5cda7, 'SkyRe_Main.esp'),
-        perkEnchantingElementalBombard0: GetHex(0x0af659, 'SkyRe_Main.esp'),
-        perkEnchantingElementalBombard1: GetHex(0x3df04e, 'SkyRe_Main.esp'),
-        perkMarksmanshipAdvancedMissilecraft0: GetHex(0x0af670, 'SkyRe_Main.esp'),
-        perkMarksmanshipAdvancedMissilecraft1: GetHex(0x0af6a4, 'SkyRe_Main.esp'),
-        perkMarksmanshipAdvancedMissilecraft2: GetHex(0x3df04d, 'SkyRe_Main.esp'),
-        perkMarksmanshipArbalest: GetHex(0x0af6a1, 'SkyRe_Main.esp'),
-        perkMarksmanshipBallistics: GetHex(0x0af657, 'SkyRe_Main.esp'),
-        perkMarksmanshipEngineer: GetHex(0x0af6a5, 'SkyRe_Main.esp'),
-        perkMarksmanshipLightweightConstruction: GetHex(0x0af6a2, 'SkyRe_Main.esp'),
-        perkMarksmanshipRecurve: GetHex(0x0af6a0, 'SkyRe_Main.esp'),
-        perkMarksmanshipSilencer: GetHex(0x0af6a3, 'SkyRe_Main.esp'),
-        perkSilverPerk: GetHex(0x10d685, 'Skyrim.esm'),
-        perkSmithingAdvanced: GetHex(0x0cb414, 'Skyrim.esm'),
-        perkSmithingArcaneBlacksmith: GetHex(0x05218e, 'Skyrim.esm'),
-        perkSmithingDaedric: GetHex(0x0cb413, 'Skyrim.esm'),
-        perkSmithingDragon: GetHex(0x052190, 'Skyrim.esm'),
-        perkSmithingDwarven: GetHex(0x0cb40e, 'Skyrim.esm'),
-        perkSmithingEbony: GetHex(0x0cb412, 'Skyrim.esm'),
-        perkSmithingElven: GetHex(0x0cb40f, 'Skyrim.esm'),
-        perkSmithingGlass: GetHex(0x0cb411, 'Skyrim.esm'),
-        perkSmithingLeather: GetHex(0x1d8be6, 'SkyRe_Main.esp'),
-        perkSmithingMeltdown: GetHex(0x058f75, 'Skyrim.esm'),
-        perkSmithingOrcish: GetHex(0x0cb410, 'Skyrim.esm'),
-        perkSmithingSilver: GetHex(0x0581e2, 'Skyrim.esm'),
-        perkSmithingSilverRefined: GetHex(0x054ff5, 'SkyRe_Main.esp'),
-        perkSmithingSteel: GetHex(0x0cb40d, 'Skyrim.esm'),
-        perkSmithingWeavingMill: GetHex(0x05c827, 'SkyRe_Main.esp'),
-        perkSneakThiefsToolbox0: GetHex(0x037d35, 'SkyRe_Main.esp'),
-        perkWeaponCrossbow: GetHex(0x252122, 'SkyRe_Main.esp'),
-        perkWeaponCrossbowArbalest: GetHex(0x0af6a6, 'SkyRe_Main.esp'),
-        perkWeaponCrossbowArbalestSilenced: GetHex(0x0af6a8, 'SkyRe_Main.esp'),
-        perkWeaponCrossbowSilenced: GetHex(0x0af6a7, 'SkyRe_Main.esp'),
-        perkWeaponShortspear: GetHex(0x1ac2ba, 'SkyRe_Main.esp'),
-        perkWeaponSilverRefined: GetHex(0x056b5c, 'SkyRe_Main.esp'),
-        perkWeaponYari: GetHex(0x09e623, 'SkyRe_Main.esp'),
-        // Sound descriptors
-        itmCoinPouchUp: GetHex(0x0899AD, 'Skyrim.esm'),
-        itmCoinPouchDown: GetHex(0x0899AE, 'Skyrim.esm'),
-        itmMushroomUp: GetHex(0x0BAD13, 'Skyrim.esm'),
-        itmClampUp: GetHex(0x100526, 'Skyrim.esm'),
-        itmPotionUpSD: GetHex(0x03EDBD, 'Skyrim.esm')
-    };
+export enum PluginsList {
+    Skyrim = 'Skyrim.esm',
+    Update = 'Update.esm',
+    Dawnguard = 'Dawnguard.esm',
+    Dragonborn = 'Dragonborn.esm',
+    SkyRe = 'SkyRe_Main.esp',
+    Poulet = 'Poulet - Main.esp'
+}
+
+export function Form(formID: number, plugin: PluginsList): string {
+    return ''.concat(String(formID), ':', plugin);
+}
+
+export class SkyrimForms {
+    static armorStrongerLow = Form(0x000666, PluginsList.Update);
+    static armorStrongerMedium = Form(0x000667, PluginsList.Update);
+    static armorStrongerHigh = Form(0x000668, PluginsList.Update);
+    static armorWeakerLow = Form(0x000669, PluginsList.Update);
+    static armorWeakerMedium = Form(0x00066a, PluginsList.Update);
+    static armorWeakerHigh = Form(0x00066b, PluginsList.Update);
+    // Weapon Modifiers
+    static weaponStrongerLow = Form(0x000660, PluginsList.Update);
+    static weaponStrongerMedium = Form(0x000661, PluginsList.Update);
+    static weaponStrongerHigh = Form(0x000662, PluginsList.Update);
+    static weaponWeakerLow = Form(0x000663, PluginsList.Update);
+    static weaponWeakerMedium = Form(0x000664, PluginsList.Update);
+    static weaponWeakerHigh = Form(0x000665, PluginsList.Update);
+    static excludeFromMeltdownRecipes = Form(0x000650, PluginsList.Update);
+    // Explosions
+    static expBarbed = Form(0x0c3421, PluginsList.SkyRe);
+    static expElementalFire = Form(0x010d90, PluginsList.Dawnguard);
+    static expElementalFrost = Form(0x010d91, PluginsList.Dawnguard);
+    static expElementalShock = Form(0x010d92, PluginsList.Dawnguard);
+    static expExploding = Form(0x00f952, PluginsList.SkyRe);
+    static expHeavyweight = Form(0x3df04c, PluginsList.SkyRe);
+    static expNoisemaker = Form(0x03a323, PluginsList.SkyRe);
+    static expNeuralgia = Form(0x3df04f, PluginsList.SkyRe);
+    static expTimebomb = Form(0x00f944, PluginsList.SkyRe);
+    // Game Settings
+    static gmstArmorScalingFactor = Form(0x021a72, PluginsList.Skyrim);
+    static gmstMaxArmorRating = Form(0x037deb, PluginsList.Skyrim);
+    // Items
+    static ingotCorundum = Form(0x05ad93, PluginsList.Skyrim);
+    static ingotDwarven = Form(0x0db8a2, PluginsList.Skyrim);
+    static ingotEbony = Form(0x05ad9d, PluginsList.Skyrim);
+    static ingotGold = Form(0x05ad9e, PluginsList.Skyrim);
+    static ingotIron = Form(0x05ace4, PluginsList.Skyrim);
+    static ingotMalachite = Form(0x05ada1, PluginsList.Skyrim);
+    static ingotMoonstone = Form(0x05ad9f, PluginsList.Skyrim);
+    static ingotOrichalcum = Form(0x05ad99, PluginsList.Skyrim);
+    static ingotQuicksilver = Form(0x05ada0, PluginsList.Skyrim);
+    static ingotSilver = Form(0x05ace3, PluginsList.Skyrim);
+    static ingotSteel = Form(0x05ace5, PluginsList.Skyrim);
+    static ale = Form(0x034c5e, PluginsList.Skyrim);
+    static boneMeal = Form(0x034cdd, PluginsList.Skyrim);
+    static charcoal = Form(0x033760, PluginsList.Skyrim);
+    static chaurusChitin = Form(0x03ad57, PluginsList.Skyrim);
+    static chitinPlate = Form(0x02b04e, PluginsList.Dragonborn);
+    static deathBell = Form(0x0516c8, PluginsList.Skyrim);
+    static dragonbone = Form(0x03ada4, PluginsList.Skyrim);
+    static dragonscale = Form(0x03ada3, PluginsList.Skyrim);
+    static fireSalt = Form(0x03ad5e, PluginsList.Skyrim);
+    static firewood = Form(0x06f993, PluginsList.Skyrim);
+    static frostSalt = Form(0x03ad5f, PluginsList.Skyrim);
+    static leather = Form(0x0db5d2, PluginsList.Skyrim);
+    static leatherStrips = Form(0x0800e4, PluginsList.Skyrim);
+    static netchLeather = Form(0x01cd7c, PluginsList.Dragonborn);
+    static oreStalhrim = Form(0x02b06b, PluginsList.Dragonborn);
+    static pettySoulGem = Form(0x02e4e2, PluginsList.Skyrim);
+    static torchbugThorax = Form(0x04da73, PluginsList.Skyrim);
+    static voidSalt = Form(0x03ad60, PluginsList.Skyrim);
+    // Keywords
+    static kwClothingHands = Form(0x10cd13, PluginsList.Skyrim);
+    static kwClothingHead = Form(0x10cd11, PluginsList.Skyrim);
+    static kwClothingFeet = Form(0x10cd12, PluginsList.Skyrim);
+    static kwClothingBody = Form(0x0a8657, PluginsList.Skyrim);
+    static kwArmorClothing = Form(0x06bbe8, PluginsList.Skyrim);
+    static kwArmorHeavy = Form(0x06bbd2, PluginsList.Skyrim);
+    static kwArmorLight = Form(0x06bbd3, PluginsList.Skyrim);
+    static kwArmorDreamcloth = Form(0x05c2c4, PluginsList.SkyRe);
+    // Keywords - Armor Materials
+    static kwArmorMaterialBlades = Form(0x0009c0, PluginsList.Update);
+    static kwArmorMaterialDaedric = Form(0x06bbd4, PluginsList.Skyrim);
+    static kwArmorMaterialDarkBrotherhood = Form(0x10fd62, PluginsList.Skyrim);
+    static kwArmorMaterialDawnguard = Form(0x012ccd, PluginsList.Dawnguard);
+    static kwArmorMaterialDragonplate = Form(0x06bbd5, PluginsList.Skyrim);
+    static kwArmorMaterialDragonscale = Form(0x06bbd6, PluginsList.Skyrim);
+    static kwArmorMaterialDwarven = Form(0x06bbd7, PluginsList.Skyrim);
+    static kwArmorMaterialEbony = Form(0x06bbd8, PluginsList.Skyrim);
+    static kwArmorMaterialElven = Form(0x06bbd9, PluginsList.Skyrim);
+    static kwArmorMaterialElvenGilded = Form(0x06bbda, PluginsList.Skyrim);
+    static kwArmorMaterialFalmerHardened = Form(0x012cce, PluginsList.Dawnguard);
+    static kwArmorMaterialFalmerHeavy = Form(0x012ccf, PluginsList.Dawnguard);
+    static kwArmorMaterialFalmerHeavyOriginal = Form(0x012cd0, PluginsList.Dawnguard);
+    static kwArmorMaterialForsworn = Form(0x0009b9, PluginsList.Update);
+    static kwArmorMaterialFur = Form(0x008254, PluginsList.SkyRe);
+    static kwArmorMaterialGlass = Form(0x06bbdc, PluginsList.Skyrim);
+    static kwArmorMaterialHide = Form(0x06bbdd, PluginsList.Skyrim);
+    static kwArmorMaterialHunter = Form(0x0050c4, PluginsList.Dawnguard);
+    static kwArmorMaterialImperialHeavy = Form(0x06bbe2, PluginsList.Skyrim);
+    static kwArmorMaterialImperialLight = Form(0x06bbe0, PluginsList.Skyrim);
+    static kwArmorMaterialImperialStudded = Form(0x06bbe1, PluginsList.Skyrim);
+    static kwArmorMaterialIron = Form(0x06bbe3, PluginsList.Skyrim);
+    static kwArmorMaterialIronBanded = Form(0x06bbe4, PluginsList.Skyrim);
+    static kwArmorMaterialLeather = Form(0x06bbdb, PluginsList.Skyrim);
+    static kwArmorMaterialNightingale = Form(0x10fd61, PluginsList.Skyrim);
+    static kwArmorMaterialNordicHeavy = Form(0x024105, PluginsList.Dragonborn);
+    static kwArmorMaterialOrcish = Form(0x06bbe5, PluginsList.Skyrim);
+    static kwArmorMaterialScaled = Form(0x06bbde, PluginsList.Skyrim);
+    static kwArmorMaterialStalhrimHeavy = Form(0x024106, PluginsList.Dragonborn);
+    static kwArmorMaterialStalhrimLight = Form(0x024107, PluginsList.Dragonborn);
+    static kwArmorMaterialSteel = Form(0x06bbe6, PluginsList.Skyrim);
+    static kwArmorMaterialSteelPlate = Form(0x06bbe7, PluginsList.Skyrim);
+    static kwArmorMaterialStormcloak = Form(0x0ac13a, PluginsList.Skyrim);
+    static kwArmorMaterialStudded = Form(0x06bbdf, PluginsList.Skyrim);
+    static kwArmorMaterialThievesGuild = Form(0x0009bc, PluginsList.Update);
+    static kwArmorMaterialVampire = Form(0x01463e, PluginsList.Dawnguard);
+    static kwDLC1ArmorMaterialDawnguard = Form(0x012ccd, PluginsList.Dawnguard);
+    static kwDLC1ArmorMaterialHunter = Form(0x0050c4, PluginsList.Dawnguard);
+    static kwDLC2ArmorMaterialChitinLight = Form(0x024102, PluginsList.Dragonborn);
+    static kwDLC2ArmorMaterialChitinHeavy = Form(0x024103, PluginsList.Dragonborn);
+    static kwDLC2ArmorMaterialBonemoldLight = Form(0x024100, PluginsList.Dragonborn);
+    static kwDLC2ArmorMaterialBonemoldHeavy = Form(0x024101, PluginsList.Dragonborn);
+    static kwWAF_ArmorMaterialDraugr = Form(0xaf0135, PluginsList.Update);
+    static kwWAF_ArmorMaterialGuard = Form(0xaf0112, PluginsList.Update);
+    static kwWAF_ArmorMaterialThalmor = Form(0xaf0222, PluginsList.Update);
+    static kwWAF_ArmorWolf = Form(0xaf0107, PluginsList.Update);
+    static kwWAF_DLC1ArmorDawnguardHeavy = Form(0xaf0117, PluginsList.Update);
+    static kwWAF_DLC1ArmorDawnguardLight = Form(0xaf0118, PluginsList.Update);
+    static kwArmorShieldHeavy = Form(0x08f265, PluginsList.SkyRe);
+    static kwArmorShieldLight = Form(0x08f266, PluginsList.SkyRe);
+    static kwArmorSlotGauntlets = Form(0x06c0ef, PluginsList.Skyrim);
+    static kwArmorSlotHelmet = Form(0x06c0ee, PluginsList.Skyrim);
+    static kwArmorSlotBoots = Form(0x06c0ed, PluginsList.Skyrim);
+    static kwArmorSlotCuirass = Form(0x06c0ec, PluginsList.Skyrim);
+    static kwArmorSlotShield = Form(0x0965b2, PluginsList.Skyrim);
+    static kwCraftingSmelter = Form(0x0a5cce, PluginsList.Skyrim);
+    static kwCraftingSmithingArmorTable = Form(0x0adb78, PluginsList.Skyrim);
+    static kwCraftingSmithingForge = Form(0x088105, PluginsList.Skyrim);
+    static kwCraftingSmithingSharpeningWheel = Form(0x088108, PluginsList.Skyrim);
+    static kwCraftingTanningRack = Form(0x07866a, PluginsList.Skyrim);
+    static kwJewelry = Form(0x08f95a, PluginsList.Skyrim);
+    static kwMasqueradeBandit = Form(0x03a8aa, PluginsList.SkyRe);
+    static kwMasqueradeForsworn = Form(0x03a8a9, PluginsList.SkyRe);
+    static kwMasqueradeImperial = Form(0x037d31, PluginsList.SkyRe);
+    static kwMasqueradeStormcloak = Form(0x037d2f, PluginsList.SkyRe);
+    static kwMasqueradeThalmor = Form(0x037d2b, PluginsList.SkyRe);
+    static kwVendorItemClothing = Form(0x08f95b, PluginsList.Skyrim);
+    // Keywords - Weapon Materials
+    static kwWAF_WeapMaterialBlades = Form(0xaf0103, PluginsList.Update);
+    static kwWAF_WeapMaterialForsworn = Form(0xaf0104, PluginsList.Update);
+    static kwWAF_DLC1WeapMaterialDawnguard = Form(0xaf0116, PluginsList.Update);
+    static kwWAF_TreatAsMaterialDaedric = Form(0xaf0217, PluginsList.Update);
+    static kwWAF_TreatAsMaterialDragon = Form(0xaf0216, PluginsList.Update);
+    static kwWAF_TreatAsMaterialDwarven = Form(0xaf0211, PluginsList.Update);
+    static kwWAF_TreatAsMaterialEbony = Form(0xaf0215, PluginsList.Update);
+    static kwWAF_TreatAsMaterialElven = Form(0xaf0212, PluginsList.Update);
+    static kwWAF_TreatAsMaterialGlass = Form(0xaf0214, PluginsList.Update);
+    static kwWAF_TreatAsMaterialIron = Form(0xaf0209, PluginsList.Update);
+    static kwWAF_TreatAsMaterialLeather = Form(0xaf0219, PluginsList.Update);
+    static kwWAF_TreatAsMaterialOrcish = Form(0xaf0213, PluginsList.Update);
+    static kwWAF_TreatAsMaterialSteel = Form(0xaf0210, PluginsList.Update);
+    static kwDLC2WeaponMaterialStalhrim = Form(0x02622f, PluginsList.Dragonborn);
+    static kwWeapMaterialDaedric = Form(0x01e71f, PluginsList.Skyrim);
+    static kwWeapMaterialDragonbone = Form(0x019822, PluginsList.Dawnguard);
+    static kwWeapMaterialDraugr = Form(0x0c5c01, PluginsList.Skyrim);
+    static kwWeapMaterialDraugrHoned = Form(0x0c5c02, PluginsList.Skyrim);
+    static kwWeapMaterialDwarven = Form(0x01e71a, PluginsList.Skyrim);
+    static kwWeapMaterialEbony = Form(0x01e71e, PluginsList.Skyrim);
+    static kwWeapMaterialElven = Form(0x01e71b, PluginsList.Skyrim);
+    static kwWeapMaterialFalmer = Form(0x0c5c03, PluginsList.Skyrim);
+    static kwWeapMaterialFalmerHoned = Form(0x0c5c04, PluginsList.Skyrim);
+    static kwWeapMaterialGlass = Form(0x01e71d, PluginsList.Skyrim);
+    static kwWeapMaterialImperial = Form(0x0c5c00, PluginsList.Skyrim);
+    static kwWeapMaterialIron = Form(0x01e718, PluginsList.Skyrim);
+    static kwWeapMaterialNordic = Form(0x026230, PluginsList.Dragonborn);
+    static kwWeapMaterialOrcish = Form(0x01e71c, PluginsList.Skyrim);
+    static kwWeapMaterialSilver = Form(0x10aa1a, PluginsList.Skyrim);
+    static kwWeapMaterialSilverRefined = Form(0x24f987, PluginsList.SkyRe);
+    static kwWeapMaterialSteel = Form(0x01e719, PluginsList.Skyrim);
+    static kwWeapMaterialWood = Form(0x01e717, PluginsList.Skyrim);
+    // Keywords - Weapon Types
+    static kwWeapTypeBastardSword = Form(0x054ff1, PluginsList.SkyRe);
+    static kwWeapTypeBattleaxe = Form(0x06d932, PluginsList.Skyrim);
+    static kwWeapTypeBattlestaff = Form(0x020857, PluginsList.SkyRe);
+    static kwWeapTypeBoundWeapon = Form(0x00f3e1, PluginsList.SkyRe);
+    static kwWeapTypeBow = Form(0x01e715, PluginsList.Skyrim);
+    static kwWeapTypeBroadsword = Form(0x05451f, PluginsList.SkyRe);
+    static kwWeapTypeClub = Form(0x09ba23, PluginsList.SkyRe);
+    static kwWeapTypeCrossbow = Form(0x06f3fd, PluginsList.Skyrim);
+    static kwWeapTypeDagger = Form(0x01e713, PluginsList.Skyrim);
+    static kwWeapTypeGlaive = Form(0x09ba40, PluginsList.SkyRe);
+    static kwWeapTypeGreatsword = Form(0x06d931, PluginsList.Skyrim);
+    static kwWeapTypeHalberd = Form(0x09ba3e, PluginsList.SkyRe);
+    static kwWeapTypeHatchet = Form(0x333676, PluginsList.SkyRe);
+    static kwWeapTypeKatana = Form(0x054523, PluginsList.SkyRe);
+    static kwWeapTypeLongbow = Form(0x06f3fe, PluginsList.Skyrim);
+    static kwWeapTypeLongmace = Form(0x0a068f, PluginsList.SkyRe);
+    static kwWeapTypeLongsword = Form(0x054520, PluginsList.SkyRe);
+    static kwWeapTypeMace = Form(0x01e714, PluginsList.Skyrim);
+    static kwWeapTypeMaul = Form(0x333677, PluginsList.SkyRe);
+    static kwWeapTypeNodachi = Form(0x054a88, PluginsList.SkyRe);
+    static kwWeapTypeSaber = Form(0x054a87, PluginsList.SkyRe);
+    static kwWeapTypeScimitar = Form(0x054a87, PluginsList.SkyRe);
+    static kwWeapTypeShortbow = Form(0x056b5f, PluginsList.SkyRe);
+    static kwWeapTypeShortspear = Form(0x1ac2b9, PluginsList.SkyRe);
+    static kwWeapTypeShortsword = Form(0x085067, PluginsList.SkyRe);
+    static kwWeapTypeStaff = Form(0x01e716, PluginsList.Skyrim);
+    static kwWeapTypeSword = Form(0x01e711, PluginsList.Skyrim);
+    static kwWeapTypeTanto = Form(0x054522, PluginsList.SkyRe);
+    static kwWeapTypeUnarmed = Form(0x066f62, PluginsList.SkyRe);
+    static kwWeapTypeWakizashi = Form(0x054521, PluginsList.SkyRe);
+    static kwWeapTypeWaraxe = Form(0x01e712, PluginsList.Skyrim);
+    static kwWeapTypeWarhammer = Form(0x06d930, PluginsList.Skyrim);
+    static kwWeapTypeYari = Form(0x09ba3f, PluginsList.SkyRe);
+    // Other keywords
+    static kwDLC1CrossbowIsEnhanced = Form(0x00399c, PluginsList.Dawnguard);
+    static kwMagicDisallowEnchanting = Form(0x0c27bd, PluginsList.Skyrim);
+    // Activator keywords
+    static kwActivatorLever = Form(0x06DEAD, PluginsList.Skyrim);
+    // Lights
+    static lightLightsource = Form(0x03a335, PluginsList.SkyRe);
+    // Perks
+    static perkAlchemyFuse = Form(0x00feda, PluginsList.SkyRe);
+    static perkAlchemyAdvancedExplosives = Form(0x00fed9, PluginsList.SkyRe);
+    static perkDreamclothBody = Form(0x5cda5, PluginsList.SkyRe);
+    static perkDreamclothHands = Form(0x5cda8, PluginsList.SkyRe);
+    static perkDreamclothHead = Form(0x5cda4, PluginsList.SkyRe);
+    static perkDreamclothFeet = Form(0x5cda7, PluginsList.SkyRe);
+    static perkEnchantingElementalBombard0 = Form(0x0af659, PluginsList.SkyRe);
+    static perkEnchantingElementalBombard1 = Form(0x3df04e, PluginsList.SkyRe);
+    static perkMarksmanshipAdvancedMissilecraft0 = Form(0x0af670, PluginsList.SkyRe);
+    static perkMarksmanshipAdvancedMissilecraft1 = Form(0x0af6a4, PluginsList.SkyRe);
+    static perkMarksmanshipAdvancedMissilecraft2 = Form(0x3df04d, PluginsList.SkyRe);
+    static perkMarksmanshipArbalest = Form(0x0af6a1, PluginsList.SkyRe);
+    static perkMarksmanshipBallistics = Form(0x0af657, PluginsList.SkyRe);
+    static perkMarksmanshipEngineer = Form(0x0af6a5, PluginsList.SkyRe);
+    static perkMarksmanshipLightweightConstruction = Form(0x0af6a2, PluginsList.SkyRe);
+    static perkMarksmanshipRecurve = Form(0x0af6a0, PluginsList.SkyRe);
+    static perkMarksmanshipSilencer = Form(0x0af6a3, PluginsList.SkyRe);
+    static perkSilverPerk = Form(0x10d685, PluginsList.Skyrim);
+    static perkSmithingAdvanced = Form(0x0cb414, PluginsList.Skyrim);
+    static perkSmithingArcaneBlacksmith = Form(0x05218e, PluginsList.Skyrim);
+    static perkSmithingDaedric = Form(0x0cb413, PluginsList.Skyrim);
+    static perkSmithingDragon = Form(0x052190, PluginsList.Skyrim);
+    static perkSmithingDwarven = Form(0x0cb40e, PluginsList.Skyrim);
+    static perkSmithingEbony = Form(0x0cb412, PluginsList.Skyrim);
+    static perkSmithingElven = Form(0x0cb40f, PluginsList.Skyrim);
+    static perkSmithingGlass = Form(0x0cb411, PluginsList.Skyrim);
+    static perkSmithingLeather = Form(0x1d8be6, PluginsList.SkyRe);
+    static perkSmithingMeltdown = Form(0x058f75, PluginsList.Skyrim);
+    static perkSmithingOrcish = Form(0x0cb410, PluginsList.Skyrim);
+    static perkSmithingSilver = Form(0x0581e2, PluginsList.Skyrim);
+    static perkSmithingSilverRefined = Form(0x054ff5, PluginsList.SkyRe);
+    static perkSmithingSteel = Form(0x0cb40d, PluginsList.Skyrim);
+    static perkSmithingWeavingMill = Form(0x05c827, PluginsList.SkyRe);
+    static perkSneakThiefsToolbox0 = Form(0x037d35, PluginsList.SkyRe);
+    static perkWeaponCrossbow = Form(0x252122, PluginsList.SkyRe);
+    static perkWeaponCrossbowArbalest = Form(0x0af6a6, PluginsList.SkyRe);
+    static perkWeaponCrossbowArbalestSilenced = Form(0x0af6a8, PluginsList.SkyRe);
+    static perkWeaponCrossbowSilenced = Form(0x0af6a7, PluginsList.SkyRe);
+    static perkWeaponShortspear = Form(0x1ac2ba, PluginsList.SkyRe);
+    static perkWeaponSilverRefined = Form(0x056b5c, PluginsList.SkyRe);
+    static perkWeaponYari = Form(0x09e623, PluginsList.SkyRe);
+    // Sound descriptors
+    static itmCoinPouchUp = Form(0x0899AD, PluginsList.Skyrim);
+    static itmCoinPouchDown = Form(0x0899AE, PluginsList.Skyrim);
+    static itmMushroomUp = Form(0x0BAD13, PluginsList.Skyrim);
+    static itmClampUp = Form(0x100526, PluginsList.Skyrim);
+    static itmPotionUpSD = Form(0x03EDBD, PluginsList.Skyrim);
+    // Addons Keywords
+    static kwdaWeapTypeAny1H = Form(0x01F02A, PluginsList.Poulet);
+    static kwdaWeapTypeAny2H = Form(0x01F02B, PluginsList.Poulet);
+    static kwCraftingClothingStation = Form(0x038964, PluginsList.Poulet);
+
+    static init(cb: GetHextCallback) {
+        Object.keys(SkyrimForms).forEach((v) => {
+            const parts = SkyrimForms[v].split(':');
+            SkyrimForms[v] = cb(parseInt(parts[0], 10), parts[1]);
+        });
+    }
 }

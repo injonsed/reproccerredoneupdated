@@ -1,4 +1,4 @@
-import { FormIdList, safeHasArrayItem } from "./core";
+import { SkyrimForms, safeHasArrayItem } from "./core";
 import { LocData } from "./localization";
 
 function fontIconFor(name: string, color = ""): string {
@@ -15,9 +15,7 @@ function hasWord(list: Array<string>, name: string): boolean {
 export class InteractionIconsFloraPatcher {
 
     helpers: xelibHelpers;
-    locals: any;
     settings: DefaultSettings;
-    s: IFormIDList;
     lang: string;
 
     patch: PatchFunction;
@@ -25,9 +23,7 @@ export class InteractionIconsFloraPatcher {
 
     constructor(helpers: xelibHelpers, locals: any, filePatch: handle, settings: DefaultSettings) {
         this.helpers = helpers;
-        this.locals = locals;
         this.settings = settings;
-        this.s = locals.statics;
         this.lang = settings.lang;
 
         this.load = {
@@ -51,19 +47,19 @@ export class InteractionIconsFloraPatcher {
         const soundv = xelib.GetValue(flora, 'SNAM');
 
         // Mushrooms
-        if (soundv.includes(this.s.itmMushroomUp) || edid.includes("SHROOM") || (full && hasWord(LocData.flora.mushrooms[this.lang], full)))
+        if (soundv.includes(SkyrimForms.itmMushroomUp) || edid.includes("SHROOM") || (full && hasWord(LocData.flora.mushrooms[this.lang], full)))
             xelib.AddElementValue(flora, 'RNAM', fontIconFor('A'));
         // Clams
-        else if (soundv.includes(this.s.itmClampUp) || edid.includes("CLAM") || (full && hasWord(LocData.flora.clams[this.lang], full)))
+        else if (soundv.includes(SkyrimForms.itmClampUp) || edid.includes("CLAM") || (full && hasWord(LocData.flora.clams[this.lang], full)))
             xelib.AddElementValue(flora, 'RNAM', fontIconFor('b'));
         // Fill action
-        else if (soundv.includes(this.s.itmPotionUpSD) || (rnam && hasWord(LocData.flora.fill[this.lang], rnam)))
+        else if (soundv.includes(SkyrimForms.itmPotionUpSD) || (rnam && hasWord(LocData.flora.fill[this.lang], rnam)))
             xelib.AddElementValue(flora, 'RNAM', fontIconFor('L'));
         // Cask or Barrel
         else if (hasWord(["BARREL", "CASK"], edid) || (full && hasWord(LocData.flora.barrel[this.lang], full)))
             xelib.AddElementValue(flora, 'RNAM', fontIconFor('L'));
         // Coin Pouch
-        else if (soundv.includes(this.s.itmCoinPouchUp) || soundv.includes(this.s.itmCoinPouchDown)
+        else if (soundv.includes(SkyrimForms.itmCoinPouchUp) || soundv.includes(SkyrimForms.itmCoinPouchDown)
                 || edid.includes("COIN") || (full && hasWord(LocData.flora.coins[this.lang], full)))
             xelib.AddElementValue(flora, 'RNAM', fontIconFor('S'));
         // Other
@@ -81,7 +77,6 @@ export class InteractionIconsActivatorPatcher {
     helpers: xelibHelpers;
     locals: any;
     settings: DefaultSettings;
-    s: IFormIDList;
     lang: string;
 
     patch: PatchFunction;
@@ -91,7 +86,6 @@ export class InteractionIconsActivatorPatcher {
         this.helpers = helpers;
         this.locals = locals;
         this.settings = settings;
-        this.s = locals.statics;
         this.lang = settings.lang;
 
         this.load = {
@@ -131,7 +125,7 @@ export class InteractionIconsActivatorPatcher {
             return xelib.AddElementValue(activator, 'RNAM', fontIconFor('S'));
 
         // Levers
-        if (safeHasArrayItem(activator, 'KWDA', '', this.s.kwActivatorLever) || edid.includes("PULLBAR")
+        if (safeHasArrayItem(activator, 'KWDA', '', SkyrimForms.kwActivatorLever) || edid.includes("PULLBAR")
                 || (full && hasWord(LocData.activators.lever[this.lang], full)))
             return xelib.AddElementValue(activator, 'RNAM', fontIconFor('D'));
 

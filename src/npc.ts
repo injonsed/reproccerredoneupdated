@@ -3,7 +3,6 @@ import { Flags, Records } from "./core";
 export default class NPCPatcher {
 
     helpers: xelibHelpers;
-    locals: any;
     settings: DefaultSettings;
     patchFile: handle;
     lang: string;
@@ -13,7 +12,6 @@ export default class NPCPatcher {
 
     constructor(helpers: xelibHelpers, locals: any, patchFile: handle, settings: DefaultSettings) {
         this.helpers = helpers;
-        this.locals = locals;
         this.settings = settings;
         this.patchFile = patchFile;
 

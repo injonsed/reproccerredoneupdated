@@ -1,4 +1,4 @@
-import { FormIdList, deepmerge } from './core';
+import { PluginsList, SkyrimForms, deepmerge } from './core';
 import { getLanguageCode } from './localization';
 import { SettingsController } from './settingsController';
 
@@ -156,7 +156,7 @@ export default class ReproccerReborn implements ZEditPatcher {
     }
 
     requiredFiles() {
-        return ['SkyRe_Main.esp', 'Poulet - Main.esp'];
+        return [PluginsList.SkyRe, PluginsList.Poulet];
     }
 
     static buildRules(locals: any) {
@@ -200,6 +200,6 @@ export default class ReproccerReborn implements ZEditPatcher {
             return files[filename];
         }
 
-        locals.statics = FormIdList(GetHex);
+        SkyrimForms.init(GetHex);
     }
 }

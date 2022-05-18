@@ -1,6 +1,6 @@
-import { addPerkScript, getValueFromName, getKwda, getModifierFromMap,
+import { addPerkScript, getValueFromName, getKwda, getModifierFromMap, getKeyword,
     overrideCraftingRecipes, safeHasArrayItem, createHasPerkCondition, createGetEquippedCondition,
-    updateHasPerkCondition, removeTemperingConditions, createGetItemCountCondition } from "./core";
+    updateHasPerkCondition, removeTemperingConditions, createGetItemCountCondition, SkyrimForms, Records } from "./core";
 import { LocData } from "./localization";
 
 export default class WeaponPatcher {
@@ -17,8 +17,6 @@ export default class WeaponPatcher {
     patchFile: handle;
     rules: any;
     settings: DefaultSettings;
-
-    statics: IFormIDList;
     lang: string;
 
     keywordMaterialMap: Array<MaterialMap>;
@@ -43,8 +41,6 @@ export default class WeaponPatcher {
         this.rules = locals.rules.weapons;
         this.settings = settings;
         this.lang = settings.lang;
-        // sanitize user modified values
-        this.statics = locals.statics;
 
         this.keywordMaterialMap = null;
         this.keywordTypesMap = null;
@@ -89,7 +85,7 @@ export default class WeaponPatcher {
             return false;
         }
 
-        if (safeHasArrayItem(record, 'KWDA', '', this.statics.kwWeapTypeStaff)) {
+        if (safeHasArrayItem(record, 'KWDA', '', SkyrimForms.kwWeapTypeStaff)) {
             return false;
         }
 
@@ -151,7 +147,6 @@ export default class WeaponPatcher {
 
     checkOverrides(weapon: handle): void {
         var type = this.getWeaponTypeOverride(this.names[weapon], xelib.EditorID(weapon));
-        var s = this.statics;
         var input;
         var perk;
 
@@ -179,7 +174,7 @@ export default class WeaponPatcher {
                 }
             }
 
-            if (e.name === 'Silver' && !xelib.HasScript(weapon, 'SilverSwordScript') && !xelib.HasArrayItem(weapon, 'KWDA', '', s.kwWeapTypeBow)) {
+            if (e.name === 'Silver' && !xelib.HasScript(weapon, 'SilverSwordScript') && !xelib.HasArrayItem(weapon, 'KWDA', '', SkyrimForms.kwWeapTypeBow)) {
                 addPerkScript(weapon, 'SilverSwordScript', 'SilverPerk', e.perk);
             }
 
@@ -188,18 +183,18 @@ export default class WeaponPatcher {
             perk = e.perk;
             return false;
         });
-        var bench = parseInt(this.statics.kwCraftingSmithingSharpeningWheel, 16);
+        var bench = parseInt(SkyrimForms.kwCraftingSmithingSharpeningWheel, 16);
         overrideCraftingRecipes(this.cobj, weapon, bench, perk, input, this.patchFile);
     }
 
     patchBowType(weapon: handle, enchanted?: boolean): void {
         var kwda = getKwda(weapon);
 
-        if (!kwda(this.statics.kwWeapTypeBow) || kwda(this.statics.kwWeapTypeCrossbow)) {
+        if (!kwda(SkyrimForms.kwWeapTypeBow) || kwda(SkyrimForms.kwWeapTypeCrossbow)) {
             return;
         }
 
-        if (kwda(this.statics.kwWeapTypeLongbow) || kwda(this.statics.kwWeapTypeShortbow)) {
+        if (kwda(SkyrimForms.kwWeapTypeLongbow) || kwda(SkyrimForms.kwWeapTypeShortbow)) {
             return;
         }
 
@@ -219,7 +214,7 @@ export default class WeaponPatcher {
             return;
         }
 
-        xelib.AddElementValue(weapon, 'KWDA\\.', this.statics.kwWeapTypeShortbow);
+        xelib.AddElementValue(weapon, 'KWDA\\.', SkyrimForms.kwWeapTypeShortbow);
 
         if (name.includes(searchName.toLocaleUpperCase())) {
             this.names[weapon] = this.names[weapon].replace(new RegExp(searchName, 'i'), shortbowName);
@@ -228,7 +223,7 @@ export default class WeaponPatcher {
     }
 
     checkBroadswordName(weapon: handle, enchanted?: boolean): void {
-        if (enchanted && !xelib.HasArrayItem(weapon, 'KWDA', '', this.statics.kwWeapTypeSword)) {
+        if (enchanted && !xelib.HasArrayItem(weapon, 'KWDA', '', SkyrimForms.kwWeapTypeSword)) {
             return;
         }
 
@@ -245,9 +240,8 @@ export default class WeaponPatcher {
         var typeString = getValueFromName(this.rules.typeOverrides, this.names[weapon], 'name', 'type');
         if (typeString === null)
             typeString = getValueFromName(this.rules.typeOverrides, xelib.EditorID(weapon), 'name', 'type');
-        var s = this.statics;
 
-        if (!typeString && xelib.HasArrayItem(weapon, 'KWDA', '', s.kwWeapTypeSword)) {
+        if (!typeString && xelib.HasArrayItem(weapon, 'KWDA', '', SkyrimForms.kwWeapTypeSword)) {
             this.checkBroadswordName(weapon);
         }
 
@@ -256,12 +250,23 @@ export default class WeaponPatcher {
                 return false;
 
             if (xelib.EditorID(weapon).toLowerCase().includes(e.name.toLowerCase()) || xelib.FullName(weapon).includes(e.name)) {
+                const weapTypeIndex = getKeyword(weapon, 'WeapType');
+                var weapType: string;
+                if (xelib.GetValue(weapon, Records.DataSkill).toUpperCase().includes('ONE'))
+                    weapType = SkyrimForms.kwdaWeapTypeAny1H;
+                else
+                    weapType = SkyrimForms.kwdaWeapTypeAny2H;
+
+                if (weapTypeIndex !== null) {
+                    xelib.RemoveElement(weapon, weapTypeIndex);
+                    xelib.AddArrayItem(weapon, Records.Keywords, '', weapType);
+                }
                 xelib.AddArrayItem(weapon, 'KWDA', '', e.kwda);
 
-                if (e.kwda === s.kwWeapTypeYari && !xelib.HasScript(weapon, 'xxxPassiveYari')) {
-                    addPerkScript(weapon, 'xxxPassiveYari', 'xxxPassiveYariEffect', s.perkWeaponYari);
-                } else if (e.kwda === s.kwWeapTypeShortspear && !xelib.HasScript(weapon, 'xxxPassiveShortspear')) {
-                    addPerkScript(weapon, 'xxxPassiveShortspear', 'xxxPassiveShortspearEffect', s.perkWeaponShortspear);
+                if (e.kwda === SkyrimForms.kwWeapTypeYari && !xelib.HasScript(weapon, 'xxxPassiveYari')) {
+                    addPerkScript(weapon, 'xxxPassiveYari', 'xxxPassiveYariEffect', SkyrimForms.perkWeaponYari);
+                } else if (e.kwda === SkyrimForms.kwWeapTypeShortspear && !xelib.HasScript(weapon, 'xxxPassiveShortspear')) {
+                    addPerkScript(weapon, 'xxxPassiveShortspear', 'xxxPassiveShortspearEffect', SkyrimForms.perkWeaponShortspear);
                 }
 
                 return true;
@@ -271,23 +276,22 @@ export default class WeaponPatcher {
     }
 
     getBaseDamage(weapon: handle): number {
-        var s = this.statics;
         var kwda = getKwda(weapon);
         var base = null;
 
-        if (kwda(s.kwWeapTypeSword) || kwda(s.kwWeapTypeWaraxe) || kwda(s.kwWeapTypeMace) || kwda(s.kwWeapTypeDagger)) {
+        if (kwda(SkyrimForms.kwWeapTypeSword) || kwda(SkyrimForms.kwWeapTypeWaraxe) || kwda(SkyrimForms.kwWeapTypeMace) || kwda(SkyrimForms.kwWeapTypeDagger)) {
             base = this.baseStats.damage.oneHanded;
         }
 
-        if (kwda(s.kwWeapTypeGreatsword) || kwda(s.kwWeapTypeWarhammer) || kwda(s.kwWeapTypeBattleaxe)) {
+        if (kwda(SkyrimForms.kwWeapTypeGreatsword) || kwda(SkyrimForms.kwWeapTypeWarhammer) || kwda(SkyrimForms.kwWeapTypeBattleaxe)) {
             base = this.baseStats.damage.twoHanded;
         }
 
-        if (kwda(s.kwWeapTypeCrossbow)) {
+        if (kwda(SkyrimForms.kwWeapTypeCrossbow)) {
             base = this.baseStats.damage.crossbow;
         }
 
-        if (kwda(s.kwWeapTypeBow)) {
+        if (kwda(SkyrimForms.kwWeapTypeBow)) {
             base = this.baseStats.damage.bow;
         }
 
@@ -340,17 +344,17 @@ export default class WeaponPatcher {
             modifier = getValueFromName<number>(this.rules.modifierOverrides, xelib.EditorID(weapon), 'name', 'multiplier')
 
         if (!modifier) {
-            if (kwda(this.statics.weaponStrongerLow)) {
+            if (kwda(SkyrimForms.weaponStrongerLow)) {
                 modifier = this.modifiers.weaponStrongerLow;
-            } else if (kwda(this.statics.weaponStrongerMedium)) {
+            } else if (kwda(SkyrimForms.weaponStrongerMedium)) {
                 modifier = this.modifiers.weaponStrongerMedium;
-            } else if (kwda(this.statics.weaponStrongerHigh)) {
+            } else if (kwda(SkyrimForms.weaponStrongerHigh)) {
                 modifier = this.modifiers.weaponStrongerHigh;
-            } else if (kwda(this.statics.weaponWeakerLow)) {
+            } else if (kwda(SkyrimForms.weaponWeakerLow)) {
                 modifier = this.modifiers.weaponWeakerLow;
-            } else if (kwda(this.statics.weaponWeakerMedium)) {
+            } else if (kwda(SkyrimForms.weaponWeakerMedium)) {
                 modifier = this.modifiers.weaponWeakerMedium;
-            } else if (kwda(this.statics.weaponWeakerHigh)) {
+            } else if (kwda(SkyrimForms.weaponWeakerHigh)) {
                 modifier = this.modifiers.weaponWeakerHigh;
             } else {
                 modifier = 1;
@@ -405,7 +409,7 @@ export default class WeaponPatcher {
         xelib.SetUIntValue(ingredient, 'CNTO\\Count', 1);
         xelib.AddElementValue(newRecipe, 'NAM1', '1');
         xelib.AddElementValue(newRecipe, 'CNAM', xelib.GetHexFormID(weapon));
-        xelib.AddElementValue(newRecipe, 'BNAM', this.statics.kwCraftingSmithingSharpeningWheel);
+        xelib.AddElementValue(newRecipe, 'BNAM', SkyrimForms.kwCraftingSmithingSharpeningWheel);
 
         if (perk) {
             xelib.AddElement(newRecipe, 'Conditions');
@@ -494,15 +498,15 @@ export default class WeaponPatcher {
     }
 
     processCrossbow(weapon: handle): void {
-        if (!xelib.HasArrayItem(weapon, 'KWDA', '', this.statics.kwWeapTypeCrossbow)) {
+        if (!xelib.HasArrayItem(weapon, 'KWDA', '', SkyrimForms.kwWeapTypeCrossbow)) {
             return;
         }
 
         if (xelib.HasScript(weapon, 'DLC1EnhancedCrossBowAddPerkScript')) {
             xelib.RemoveScript(weapon, 'DLC1EnhancedCrossBowAddPerkScript');
-            addPerkScript(weapon, 'xxxAddPerkWhileEquipped', 'p', this.statics.perkWeaponCrossbow);
+            addPerkScript(weapon, 'xxxAddPerkWhileEquipped', 'p', SkyrimForms.perkWeaponCrossbow);
             xelib.AddElementValue(weapon, 'DESC', LocData.weapon.crossbow.Classic.desc[this.lang]);
-            xelib.AddArrayItem(weapon, 'KWDA', '', this.statics.kwMagicDisallowEnchanting);
+            xelib.AddArrayItem(weapon, 'KWDA', '', SkyrimForms.kwMagicDisallowEnchanting);
         }
 
         if (this.rules.excludedCrossbows.find((e: string) => {
@@ -527,17 +531,17 @@ export default class WeaponPatcher {
         xelib.AddElementValue(newRecurveCrossbow, 'EDID', newEditorId);
         xelib.AddElementValue(newRecurveCrossbow, 'FULL', newName);
         xelib.AddElementValue(newRecurveCrossbow, 'DESC', crossbowDesc);
-        xelib.AddArrayItem(newRecurveCrossbow, 'KWDA', '', this.statics.kwDLC1CrossbowIsEnhanced);
-        xelib.AddArrayItem(newRecurveCrossbow, 'KWDA', '', this.statics.kwMagicDisallowEnchanting);
+        xelib.AddArrayItem(newRecurveCrossbow, 'KWDA', '', SkyrimForms.kwDLC1CrossbowIsEnhanced);
+        xelib.AddArrayItem(newRecurveCrossbow, 'KWDA', '', SkyrimForms.kwMagicDisallowEnchanting);
         this.names[newRecurveCrossbow] = newName;
         this.applyRecurveCrossbowChanges(newRecurveCrossbow);
-        addPerkScript(newRecurveCrossbow, 'xxxAddPerkWhileEquipped', 'p', this.statics.perkWeaponCrossbow);
+        addPerkScript(newRecurveCrossbow, 'xxxAddPerkWhileEquipped', 'p', SkyrimForms.perkWeaponCrossbow);
         this.addTemperingRecipe(newRecurveCrossbow);
         this.addMeltdownRecipe(newRecurveCrossbow);
-        requiredPerks.push(this.statics.perkMarksmanshipBallistics);
-        requiredPerks.push(this.statics.perkMarksmanshipRecurve);
-        secondaryIngredients.push(this.statics.leatherStrips);
-        secondaryIngredients.push(this.statics.firewood);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipBallistics);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipRecurve);
+        secondaryIngredients.push(SkyrimForms.leatherStrips);
+        secondaryIngredients.push(SkyrimForms.firewood);
         secondaryIngredients.push(xelib.GetHexFormID(weapon));
         this.addCraftingRecipe(newRecurveCrossbow, requiredPerks, secondaryIngredients);
 
@@ -551,17 +555,17 @@ export default class WeaponPatcher {
         xelib.AddElementValue(newArbalestCrossbow, 'EDID', newEditorId);
         xelib.AddElementValue(newArbalestCrossbow, 'FULL', newName);
         xelib.AddElementValue(newArbalestCrossbow, 'DESC', crossbowDesc);
-        xelib.AddArrayItem(newArbalestCrossbow, 'KWDA', '', this.statics.kwDLC1CrossbowIsEnhanced);
-        xelib.AddArrayItem(newArbalestCrossbow, 'KWDA', '', this.statics.kwMagicDisallowEnchanting);
+        xelib.AddArrayItem(newArbalestCrossbow, 'KWDA', '', SkyrimForms.kwDLC1CrossbowIsEnhanced);
+        xelib.AddArrayItem(newArbalestCrossbow, 'KWDA', '', SkyrimForms.kwMagicDisallowEnchanting);
         this.names[newArbalestCrossbow] = newName;
         this.applyArbalestCrossbowChanges(newArbalestCrossbow);
-        addPerkScript(newArbalestCrossbow, 'xxxAddPerkWhileEquipped', 'p', this.statics.perkWeaponCrossbowArbalest);
+        addPerkScript(newArbalestCrossbow, 'xxxAddPerkWhileEquipped', 'p', SkyrimForms.perkWeaponCrossbowArbalest);
         this.addTemperingRecipe(newArbalestCrossbow);
         this.addMeltdownRecipe(newArbalestCrossbow);
-        requiredPerks.push(this.statics.perkMarksmanshipBallistics);
-        requiredPerks.push(this.statics.perkMarksmanshipArbalest);
-        secondaryIngredients.push(this.statics.leatherStrips);
-        secondaryIngredients.push(this.statics.firewood);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipBallistics);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipArbalest);
+        secondaryIngredients.push(SkyrimForms.leatherStrips);
+        secondaryIngredients.push(SkyrimForms.firewood);
         secondaryIngredients.push(xelib.GetHexFormID(weapon));
         this.addCraftingRecipe(newArbalestCrossbow, requiredPerks, secondaryIngredients);
 
@@ -575,17 +579,17 @@ export default class WeaponPatcher {
         xelib.AddElementValue(newLightweightCrossbow, 'EDID', newEditorId);
         xelib.AddElementValue(newLightweightCrossbow, 'FULL', newName);
         xelib.AddElementValue(newLightweightCrossbow, 'DESC', crossbowDesc);
-        xelib.AddArrayItem(newLightweightCrossbow, 'KWDA', '', this.statics.kwDLC1CrossbowIsEnhanced);
-        xelib.AddArrayItem(newLightweightCrossbow, 'KWDA', '', this.statics.kwMagicDisallowEnchanting);
+        xelib.AddArrayItem(newLightweightCrossbow, 'KWDA', '', SkyrimForms.kwDLC1CrossbowIsEnhanced);
+        xelib.AddArrayItem(newLightweightCrossbow, 'KWDA', '', SkyrimForms.kwMagicDisallowEnchanting);
         this.names[newLightweightCrossbow] = newName;
         this.applyLightweightCrossbowChanges(newLightweightCrossbow);
-        addPerkScript(newLightweightCrossbow, 'xxxAddPerkWhileEquipped', 'p', this.statics.perkWeaponCrossbow);
+        addPerkScript(newLightweightCrossbow, 'xxxAddPerkWhileEquipped', 'p', SkyrimForms.perkWeaponCrossbow);
         this.addTemperingRecipe(newLightweightCrossbow);
         this.addMeltdownRecipe(newLightweightCrossbow);
-        requiredPerks.push(this.statics.perkMarksmanshipBallistics);
-        requiredPerks.push(this.statics.perkMarksmanshipLightweightConstruction);
-        secondaryIngredients.push(this.statics.leatherStrips);
-        secondaryIngredients.push(this.statics.firewood);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipBallistics);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipLightweightConstruction);
+        secondaryIngredients.push(SkyrimForms.leatherStrips);
+        secondaryIngredients.push(SkyrimForms.firewood);
         secondaryIngredients.push(xelib.GetHexFormID(weapon));
         this.addCraftingRecipe(newLightweightCrossbow, requiredPerks, secondaryIngredients);
 
@@ -599,17 +603,17 @@ export default class WeaponPatcher {
         xelib.AddElementValue(newSilencedCrossbow, 'EDID', newEditorId);
         xelib.AddElementValue(newSilencedCrossbow, 'FULL', newName);
         xelib.AddElementValue(newSilencedCrossbow, 'DESC', crossbowDesc);
-        xelib.AddArrayItem(newSilencedCrossbow, 'KWDA', '', this.statics.kwDLC1CrossbowIsEnhanced);
-        xelib.AddArrayItem(newSilencedCrossbow, 'KWDA', '', this.statics.kwMagicDisallowEnchanting);
+        xelib.AddArrayItem(newSilencedCrossbow, 'KWDA', '', SkyrimForms.kwDLC1CrossbowIsEnhanced);
+        xelib.AddArrayItem(newSilencedCrossbow, 'KWDA', '', SkyrimForms.kwMagicDisallowEnchanting);
         this.names[newSilencedCrossbow] = newName;
         this.applySilencedCrossbowChanges(newSilencedCrossbow);
-        addPerkScript(newSilencedCrossbow, 'xxxAddPerkWhileEquipped', 'p', this.statics.perkWeaponCrossbowSilenced);
+        addPerkScript(newSilencedCrossbow, 'xxxAddPerkWhileEquipped', 'p', SkyrimForms.perkWeaponCrossbowSilenced);
         this.addTemperingRecipe(newSilencedCrossbow);
         this.addMeltdownRecipe(newSilencedCrossbow);
-        requiredPerks.push(this.statics.perkMarksmanshipBallistics);
-        requiredPerks.push(this.statics.perkMarksmanshipSilencer);
-        secondaryIngredients.push(this.statics.leatherStrips);
-        secondaryIngredients.push(this.statics.firewood);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipBallistics);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipSilencer);
+        secondaryIngredients.push(SkyrimForms.leatherStrips);
+        secondaryIngredients.push(SkyrimForms.firewood);
         secondaryIngredients.push(xelib.GetHexFormID(weapon));
         this.addCraftingRecipe(newSilencedCrossbow, requiredPerks, secondaryIngredients);
 
@@ -622,20 +626,20 @@ export default class WeaponPatcher {
         xelib.AddElementValue(newRecurveArbalestCrossbow, 'EDID', newEditorId);
         xelib.AddElementValue(newRecurveArbalestCrossbow, 'FULL', newName);
         xelib.AddElementValue(newRecurveArbalestCrossbow, 'DESC', crossbowDesc);
-        xelib.AddArrayItem(newRecurveArbalestCrossbow, 'KWDA', '', this.statics.kwDLC1CrossbowIsEnhanced);
-        xelib.AddArrayItem(newRecurveArbalestCrossbow, 'KWDA', '', this.statics.kwMagicDisallowEnchanting);
+        xelib.AddArrayItem(newRecurveArbalestCrossbow, 'KWDA', '', SkyrimForms.kwDLC1CrossbowIsEnhanced);
+        xelib.AddArrayItem(newRecurveArbalestCrossbow, 'KWDA', '', SkyrimForms.kwMagicDisallowEnchanting);
         this.names[newRecurveArbalestCrossbow] = newName;
         this.applyRecurveCrossbowChanges(newRecurveArbalestCrossbow);
         this.applyArbalestCrossbowChanges(newRecurveArbalestCrossbow);
-        addPerkScript(newRecurveArbalestCrossbow, 'xxxAddPerkWhileEquipped', 'p', this.statics.perkWeaponCrossbowArbalest);
+        addPerkScript(newRecurveArbalestCrossbow, 'xxxAddPerkWhileEquipped', 'p', SkyrimForms.perkWeaponCrossbowArbalest);
         this.addTemperingRecipe(newRecurveArbalestCrossbow);
         this.addMeltdownRecipe(newRecurveArbalestCrossbow);
-        requiredPerks.push(this.statics.perkMarksmanshipBallistics);
-        requiredPerks.push(this.statics.perkMarksmanshipRecurve);
-        requiredPerks.push(this.statics.perkMarksmanshipArbalest);
-        requiredPerks.push(this.statics.perkMarksmanshipEngineer);
-        secondaryIngredients.push(this.statics.leatherStrips);
-        secondaryIngredients.push(this.statics.firewood);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipBallistics);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipRecurve);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipArbalest);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipEngineer);
+        secondaryIngredients.push(SkyrimForms.leatherStrips);
+        secondaryIngredients.push(SkyrimForms.firewood);
         secondaryIngredients.push(xelib.GetHexFormID(weapon));
         this.addCraftingRecipe(newRecurveArbalestCrossbow, requiredPerks, secondaryIngredients);
 
@@ -648,20 +652,20 @@ export default class WeaponPatcher {
         xelib.AddElementValue(newRecurveLightweightCrossbow, 'EDID', newEditorId);
         xelib.AddElementValue(newRecurveLightweightCrossbow, 'FULL', newName);
         xelib.AddElementValue(newRecurveLightweightCrossbow, 'DESC', crossbowDesc);
-        xelib.AddArrayItem(newRecurveLightweightCrossbow, 'KWDA', '', this.statics.kwDLC1CrossbowIsEnhanced);
-        xelib.AddArrayItem(newRecurveLightweightCrossbow, 'KWDA', '', this.statics.kwMagicDisallowEnchanting);
+        xelib.AddArrayItem(newRecurveLightweightCrossbow, 'KWDA', '', SkyrimForms.kwDLC1CrossbowIsEnhanced);
+        xelib.AddArrayItem(newRecurveLightweightCrossbow, 'KWDA', '', SkyrimForms.kwMagicDisallowEnchanting);
         this.names[newRecurveLightweightCrossbow] = newName;
         this.applyRecurveCrossbowChanges(newRecurveLightweightCrossbow);
         this.applyLightweightCrossbowChanges(newRecurveLightweightCrossbow);
-        addPerkScript(newRecurveLightweightCrossbow, 'xxxAddPerkWhileEquipped', 'p', this.statics.perkWeaponCrossbowArbalest);
+        addPerkScript(newRecurveLightweightCrossbow, 'xxxAddPerkWhileEquipped', 'p', SkyrimForms.perkWeaponCrossbowArbalest);
         this.addTemperingRecipe(newRecurveLightweightCrossbow);
         this.addMeltdownRecipe(newRecurveLightweightCrossbow);
-        requiredPerks.push(this.statics.perkMarksmanshipBallistics);
-        requiredPerks.push(this.statics.perkMarksmanshipRecurve);
-        requiredPerks.push(this.statics.perkMarksmanshipLightweightConstruction);
-        requiredPerks.push(this.statics.perkMarksmanshipEngineer);
-        secondaryIngredients.push(this.statics.leatherStrips);
-        secondaryIngredients.push(this.statics.firewood);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipBallistics);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipRecurve);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipLightweightConstruction);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipEngineer);
+        secondaryIngredients.push(SkyrimForms.leatherStrips);
+        secondaryIngredients.push(SkyrimForms.firewood);
         secondaryIngredients.push(xelib.GetHexFormID(weapon));
         this.addCraftingRecipe(newRecurveLightweightCrossbow, requiredPerks, secondaryIngredients);
 
@@ -674,20 +678,20 @@ export default class WeaponPatcher {
         xelib.AddElementValue(newRecurveSilencedCrossbow, 'EDID', newEditorId);
         xelib.AddElementValue(newRecurveSilencedCrossbow, 'FULL', newName);
         xelib.AddElementValue(newRecurveSilencedCrossbow, 'DESC', crossbowDesc);
-        xelib.AddArrayItem(newRecurveSilencedCrossbow, 'KWDA', '', this.statics.kwDLC1CrossbowIsEnhanced);
-        xelib.AddArrayItem(newRecurveSilencedCrossbow, 'KWDA', '', this.statics.kwMagicDisallowEnchanting);
+        xelib.AddArrayItem(newRecurveSilencedCrossbow, 'KWDA', '', SkyrimForms.kwDLC1CrossbowIsEnhanced);
+        xelib.AddArrayItem(newRecurveSilencedCrossbow, 'KWDA', '', SkyrimForms.kwMagicDisallowEnchanting);
         this.names[newRecurveSilencedCrossbow] = newName;
         this.applyRecurveCrossbowChanges(newRecurveSilencedCrossbow);
         this.applySilencedCrossbowChanges(newRecurveSilencedCrossbow);
-        addPerkScript(newRecurveSilencedCrossbow, 'xxxAddPerkWhileEquipped', 'p', this.statics.perkWeaponCrossbowSilenced);
+        addPerkScript(newRecurveSilencedCrossbow, 'xxxAddPerkWhileEquipped', 'p', SkyrimForms.perkWeaponCrossbowSilenced);
         this.addTemperingRecipe(newRecurveSilencedCrossbow);
         this.addMeltdownRecipe(newRecurveSilencedCrossbow);
-        requiredPerks.push(this.statics.perkMarksmanshipBallistics);
-        requiredPerks.push(this.statics.perkMarksmanshipRecurve);
-        requiredPerks.push(this.statics.perkMarksmanshipSilencer);
-        requiredPerks.push(this.statics.perkMarksmanshipEngineer);
-        secondaryIngredients.push(this.statics.leatherStrips);
-        secondaryIngredients.push(this.statics.firewood);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipBallistics);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipRecurve);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipSilencer);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipEngineer);
+        secondaryIngredients.push(SkyrimForms.leatherStrips);
+        secondaryIngredients.push(SkyrimForms.firewood);
         secondaryIngredients.push(xelib.GetHexFormID(weapon));
         this.addCraftingRecipe(newRecurveSilencedCrossbow, requiredPerks, secondaryIngredients);
 
@@ -700,20 +704,20 @@ export default class WeaponPatcher {
         xelib.AddElementValue(newLightweightArbalestCrossbow, 'EDID', newEditorId);
         xelib.AddElementValue(newLightweightArbalestCrossbow, 'FULL', newName);
         xelib.AddElementValue(newLightweightArbalestCrossbow, 'DESC', crossbowDesc);
-        xelib.AddArrayItem(newLightweightArbalestCrossbow, 'KWDA', '', this.statics.kwDLC1CrossbowIsEnhanced);
-        xelib.AddArrayItem(newLightweightArbalestCrossbow, 'KWDA', '', this.statics.kwMagicDisallowEnchanting);
+        xelib.AddArrayItem(newLightweightArbalestCrossbow, 'KWDA', '', SkyrimForms.kwDLC1CrossbowIsEnhanced);
+        xelib.AddArrayItem(newLightweightArbalestCrossbow, 'KWDA', '', SkyrimForms.kwMagicDisallowEnchanting);
         this.names[newLightweightArbalestCrossbow] = newName;
         this.applyArbalestCrossbowChanges(newLightweightArbalestCrossbow);
         this.applyLightweightCrossbowChanges(newLightweightArbalestCrossbow);
-        addPerkScript(newLightweightArbalestCrossbow, 'xxxAddPerkWhileEquipped', 'p', this.statics.perkWeaponCrossbowArbalest);
+        addPerkScript(newLightweightArbalestCrossbow, 'xxxAddPerkWhileEquipped', 'p', SkyrimForms.perkWeaponCrossbowArbalest);
         this.addTemperingRecipe(newLightweightArbalestCrossbow);
         this.addMeltdownRecipe(newLightweightArbalestCrossbow);
-        requiredPerks.push(this.statics.perkMarksmanshipBallistics);
-        requiredPerks.push(this.statics.perkMarksmanshipLightweightConstruction);
-        requiredPerks.push(this.statics.perkMarksmanshipArbalest);
-        requiredPerks.push(this.statics.perkMarksmanshipEngineer);
-        secondaryIngredients.push(this.statics.leatherStrips);
-        secondaryIngredients.push(this.statics.firewood);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipBallistics);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipLightweightConstruction);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipArbalest);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipEngineer);
+        secondaryIngredients.push(SkyrimForms.leatherStrips);
+        secondaryIngredients.push(SkyrimForms.firewood);
         secondaryIngredients.push(xelib.GetHexFormID(weapon));
         this.addCraftingRecipe(newLightweightArbalestCrossbow, requiredPerks, secondaryIngredients);
 
@@ -726,20 +730,20 @@ export default class WeaponPatcher {
         xelib.AddElementValue(newSilencedArbalestCrossbow, 'EDID', newEditorId);
         xelib.AddElementValue(newSilencedArbalestCrossbow, 'FULL', newName);
         xelib.AddElementValue(newSilencedArbalestCrossbow, 'DESC', crossbowDesc);
-        xelib.AddArrayItem(newSilencedArbalestCrossbow, 'KWDA', '', this.statics.kwDLC1CrossbowIsEnhanced);
-        xelib.AddArrayItem(newSilencedArbalestCrossbow, 'KWDA', '', this.statics.kwMagicDisallowEnchanting);
+        xelib.AddArrayItem(newSilencedArbalestCrossbow, 'KWDA', '', SkyrimForms.kwDLC1CrossbowIsEnhanced);
+        xelib.AddArrayItem(newSilencedArbalestCrossbow, 'KWDA', '', SkyrimForms.kwMagicDisallowEnchanting);
         this.names[newSilencedArbalestCrossbow] = newName;
         this.applyArbalestCrossbowChanges(newSilencedArbalestCrossbow);
         this.applySilencedCrossbowChanges(newSilencedArbalestCrossbow);
-        addPerkScript(newSilencedArbalestCrossbow, 'xxxAddPerkWhileEquipped', 'p', this.statics.perkWeaponCrossbowArbalestSilenced);
+        addPerkScript(newSilencedArbalestCrossbow, 'xxxAddPerkWhileEquipped', 'p', SkyrimForms.perkWeaponCrossbowArbalestSilenced);
         this.addTemperingRecipe(newSilencedArbalestCrossbow);
         this.addMeltdownRecipe(newSilencedArbalestCrossbow);
-        requiredPerks.push(this.statics.perkMarksmanshipBallistics);
-        requiredPerks.push(this.statics.perkMarksmanshipSilencer);
-        requiredPerks.push(this.statics.perkMarksmanshipArbalest);
-        requiredPerks.push(this.statics.perkMarksmanshipEngineer);
-        secondaryIngredients.push(this.statics.leatherStrips);
-        secondaryIngredients.push(this.statics.firewood);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipBallistics);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipSilencer);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipArbalest);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipEngineer);
+        secondaryIngredients.push(SkyrimForms.leatherStrips);
+        secondaryIngredients.push(SkyrimForms.firewood);
         secondaryIngredients.push(xelib.GetHexFormID(weapon));
         this.addCraftingRecipe(newSilencedArbalestCrossbow, requiredPerks, secondaryIngredients);
 
@@ -752,20 +756,20 @@ export default class WeaponPatcher {
         xelib.AddElementValue(newLightweightSilencedCrossbow, 'EDID', newEditorId);
         xelib.AddElementValue(newLightweightSilencedCrossbow, 'FULL', newName);
         xelib.AddElementValue(newLightweightSilencedCrossbow, 'DESC', crossbowDesc);
-        xelib.AddArrayItem(newLightweightSilencedCrossbow, 'KWDA', '', this.statics.kwDLC1CrossbowIsEnhanced);
-        xelib.AddArrayItem(newLightweightSilencedCrossbow, 'KWDA', '', this.statics.kwMagicDisallowEnchanting);
+        xelib.AddArrayItem(newLightweightSilencedCrossbow, 'KWDA', '', SkyrimForms.kwDLC1CrossbowIsEnhanced);
+        xelib.AddArrayItem(newLightweightSilencedCrossbow, 'KWDA', '', SkyrimForms.kwMagicDisallowEnchanting);
         this.names[newLightweightSilencedCrossbow] = newName;
         this.applyLightweightCrossbowChanges(newLightweightSilencedCrossbow);
         this.applySilencedCrossbowChanges(newLightweightSilencedCrossbow);
-        addPerkScript(newLightweightSilencedCrossbow, 'xxxAddPerkWhileEquipped', 'p', this.statics.perkWeaponCrossbowSilenced);
+        addPerkScript(newLightweightSilencedCrossbow, 'xxxAddPerkWhileEquipped', 'p', SkyrimForms.perkWeaponCrossbowSilenced);
         this.addTemperingRecipe(newLightweightSilencedCrossbow);
         this.addMeltdownRecipe(newLightweightSilencedCrossbow);
-        requiredPerks.push(this.statics.perkMarksmanshipBallistics);
-        requiredPerks.push(this.statics.perkMarksmanshipLightweightConstruction);
-        requiredPerks.push(this.statics.perkMarksmanshipSilencer);
-        requiredPerks.push(this.statics.perkMarksmanshipEngineer);
-        secondaryIngredients.push(this.statics.leatherStrips);
-        secondaryIngredients.push(this.statics.firewood);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipBallistics);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipLightweightConstruction);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipSilencer);
+        requiredPerks.push(SkyrimForms.perkMarksmanshipEngineer);
+        secondaryIngredients.push(SkyrimForms.leatherStrips);
+        secondaryIngredients.push(SkyrimForms.firewood);
         secondaryIngredients.push(xelib.GetHexFormID(weapon));
         this.addCraftingRecipe(newLightweightSilencedCrossbow, requiredPerks, secondaryIngredients);
         requiredPerks = [];
@@ -773,7 +777,6 @@ export default class WeaponPatcher {
     }
 
     temperingPerkFromKeyword(weapon: handle): string {
-        var s = this.statics;
         var kwda = getKwda(weapon);
         var perk;
         this.keywordMaterialMap.some((e) => {
@@ -785,7 +788,8 @@ export default class WeaponPatcher {
             return true;
         });
 
-        if (!perk && !kwda(s.kwWeapMaterialIron) && !kwda(s.kwWAF_TreatAsMaterialIron) && !kwda(s.kwWeapMaterialWood) && !kwda(s.kwWAF_WeapMaterialForsworn)) {
+        if (!perk && !kwda(SkyrimForms.kwWeapMaterialIron) && !kwda(SkyrimForms.kwWAF_TreatAsMaterialIron)
+            && !kwda(SkyrimForms.kwWeapMaterialWood) && !kwda(SkyrimForms.kwWAF_WeapMaterialForsworn)) {
             this.log(weapon, "Couldn't determine material - tempering recipe not modified.");
         }
 
@@ -795,7 +799,7 @@ export default class WeaponPatcher {
     modifyTemperingRecipe(weapon: handle, weaponFormID: string, excluded: boolean, recipe: IRecipe): void {
         var bnam = recipe.bnam;
         var cnamv = recipe.cnamv;
-        var bench = parseInt(this.statics.kwCraftingSmithingSharpeningWheel, 16);
+        var bench = parseInt(SkyrimForms.kwCraftingSmithingSharpeningWheel, 16);
         var isRefers = cnamv.includes(weaponFormID);
 
         if (bnam !== bench || !isRefers || excluded) {
@@ -819,11 +823,11 @@ export default class WeaponPatcher {
         }
 
         if (!xelib.HasArrayItem(newRecipe, 'Conditions', 'CTDA\\Function', 'EPTemperingItemIsEnchanted')
-            && !xelib.HasArrayItem(newRecipe, 'Conditions', 'CTDA\\Parameter #1', this.statics.perkSmithingArcaneBlacksmith)) {
+            && !xelib.HasArrayItem(newRecipe, 'Conditions', 'CTDA\\Parameter #1', SkyrimForms.perkSmithingArcaneBlacksmith)) {
             newCond = xelib.AddArrayItem(newRecipe, 'Conditions', '', '');
             updateHasPerkCondition(newRecipe, newCond, '00010000', 1, '', 'EPTemperingItemIsEnchanted');
             newCond = xelib.AddArrayItem(newRecipe, 'Conditions', '', '');
-            updateHasPerkCondition(newRecipe, newCond, 10000000, 1, this.statics.perkSmithingArcaneBlacksmith);
+            updateHasPerkCondition(newRecipe, newCond, 10000000, 1, SkyrimForms.perkSmithingArcaneBlacksmith);
         }
     }
 
@@ -835,11 +839,11 @@ export default class WeaponPatcher {
             return;
         }
 
-        var bench = parseInt(this.statics.kwCraftingSmithingSharpeningWheel, 16);
+        var bench = parseInt(SkyrimForms.kwCraftingSmithingSharpeningWheel, 16);
         var newRecipe = xelib.CopyElement(recipe.handle, this.patchFile);
 
         if (recipe.bnam !== bench) {
-            xelib.AddElementValue(newRecipe, 'BNAM', this.statics.kwCraftingSmithingForge);
+            xelib.AddElementValue(newRecipe, 'BNAM', SkyrimForms.kwCraftingSmithingForge);
         }
 
         var perk = this.temperingPerkFromKeyword(weapon);
@@ -852,7 +856,7 @@ export default class WeaponPatcher {
         var condition = xelib.AddArrayItem(newRecipe, 'Conditions', '', '');
         updateHasPerkCondition(newRecipe, condition, 10000000, 1, perk);
         condition = xelib.AddArrayItem(newRecipe, 'Conditions', '', '');
-        updateHasPerkCondition(newRecipe, condition, 10000000, 1, this.statics.perkMarksmanshipBallistics);
+        updateHasPerkCondition(newRecipe, condition, 10000000, 1, SkyrimForms.perkMarksmanshipBallistics);
     }
 
     modifyRecipes(weapon: handle): void {
@@ -860,7 +864,7 @@ export default class WeaponPatcher {
         var edid = xelib.EditorID(weapon);
 
         var weaponFormID = xelib.GetHexFormID(weapon);
-        var weaponIsCrossbow = xelib.HasArrayItem(weapon, 'KWDA', '', this.statics.kwWeapTypeCrossbow);
+        var weaponIsCrossbow = xelib.HasArrayItem(weapon, 'KWDA', '', SkyrimForms.kwWeapTypeCrossbow);
         var excluded = this.rules.excludedFromRecipes.find((e: IJSONElement) => {
             if (e.edid && e.edid !== null)
                 return edid.includes(e.edid)
@@ -875,7 +879,7 @@ export default class WeaponPatcher {
     }
 
     processSilverWeapon(weapon: handle): void {
-        if (!xelib.HasArrayItem(weapon, 'KWDA', '', this.statics.kwWeapMaterialSilver) || xelib.HasArrayItem(weapon, 'KWDA', '', this.statics.kwWeapTypeBow)) {
+        if (!xelib.HasArrayItem(weapon, 'KWDA', '', SkyrimForms.kwWeapMaterialSilver) || xelib.HasArrayItem(weapon, 'KWDA', '', SkyrimForms.kwWeapTypeBow)) {
             return;
         }
 
@@ -889,7 +893,7 @@ export default class WeaponPatcher {
         xelib.AddElementValue(newRefinedSilverWeapon, 'FULL', newName);
         this.names[newRefinedSilverWeapon] = newName;
         xelib.AddElementValue(newRefinedSilverWeapon, 'DESC', desc);
-        xelib.AddElementValue(newRefinedSilverWeapon, 'KWDA\\.', this.statics.kwWeapMaterialSilverRefined);
+        xelib.AddElementValue(newRefinedSilverWeapon, 'KWDA\\.', SkyrimForms.kwWeapMaterialSilverRefined);
         this.patchWeaponDamage(newRefinedSilverWeapon);
         this.patchWeaponReach(newRefinedSilverWeapon);
         this.patchWeaponSpeed(newRefinedSilverWeapon);
@@ -913,16 +917,15 @@ export default class WeaponPatcher {
         xelib.SetValue(property, 'propertyName', 'SilverPerk');
         xelib.SetValue(property, 'Type', 'Object');
         xelib.SetValue(property, 'Flags', 'Edited');
-        xelib.SetValue(property, 'Value\\Object Union\\Object v2\\FormID', this.statics.perkWeaponSilverRefined);
+        xelib.SetValue(property, 'Value\\Object Union\\Object v2\\FormID', SkyrimForms.perkWeaponSilverRefined);
         xelib.SetValue(property, 'Value\\Object Union\\Object v2\\Alias', 'None');
         this.addTemperingRecipe(newRefinedSilverWeapon);
-        var ingredients = [this.statics.ingotGold, this.statics.ingotQuicksilver, xelib.GetHexFormID(weapon)];
-        this.addCraftingRecipe(newRefinedSilverWeapon, [this.statics.perkSmithingSilverRefined], ingredients);
+        var ingredients = [SkyrimForms.ingotGold, SkyrimForms.ingotQuicksilver, xelib.GetHexFormID(weapon)];
+        this.addCraftingRecipe(newRefinedSilverWeapon, [SkyrimForms.perkSmithingSilverRefined], ingredients);
         this.addMeltdownRecipe(newRefinedSilverWeapon);
     }
 
     addMeltdownRecipe(weapon: handle): void {
-        var s = this.statics;
         var kwda = getKwda(weapon);
         var outputQuantity = 1;
         var inputQuantity = 1;
@@ -942,13 +945,13 @@ export default class WeaponPatcher {
         if (xelib.HasElement(weapon, 'EITM'))
             return;
 
-        if (xelib.HasArrayItem(weapon, 'KWDA', '', s.excludeFromMeltdownRecipes) || xelib.GetFlag(weapon, 'DNAM\\Flags2', 'Bound Weapon') || excluded) {
+        if (xelib.HasArrayItem(weapon, 'KWDA', '', SkyrimForms.excludeFromMeltdownRecipes) || xelib.GetFlag(weapon, 'DNAM\\Flags2', 'Bound Weapon') || excluded) {
             return;
         }
 
-        if (kwda(s.kwWeapTypeBattleaxe) || kwda(s.kwWeapTypeGreatsword) || kwda(s.kwWeapTypeWarhammer) || kwda(s.kwWeapTypeBow)) {
+        if (kwda(SkyrimForms.kwWeapTypeBattleaxe) || kwda(SkyrimForms.kwWeapTypeGreatsword) || kwda(SkyrimForms.kwWeapTypeWarhammer) || kwda(SkyrimForms.kwWeapTypeBow)) {
             outputQuantity += 1;
-        } else if (kwda(s.kwWeapTypeDagger)) {
+        } else if (kwda(SkyrimForms.kwWeapTypeDagger)) {
             inputQuantity += 1;
         }
 
@@ -962,9 +965,9 @@ export default class WeaponPatcher {
             return true;
         });
 
-        if (kwda(s.kwWeapMaterialDaedric)) {
+        if (kwda(SkyrimForms.kwWeapMaterialDaedric)) {
             outputQuantity += 1;
-        } else if (kwda(s.kwWeapMaterialDraugr) || kwda(s.kwWeapMaterialDraugrHoned)) {
+        } else if (kwda(SkyrimForms.kwWeapMaterialDraugr) || kwda(SkyrimForms.kwWeapMaterialDraugrHoned)) {
             inputQuantity += 1;
         }
 
@@ -993,10 +996,10 @@ export default class WeaponPatcher {
         xelib.SetUIntValue(ingredient, 'CNTO\\Count', inputQuantity);
         xelib.AddElementValue(newRecipe, 'NAM1', "".concat(String(outputQuantity)));
         xelib.AddElementValue(newRecipe, 'CNAM', input);
-        xelib.AddElementValue(newRecipe, 'BNAM', this.statics.kwCraftingSmelter);
+        xelib.AddElementValue(newRecipe, 'BNAM', SkyrimForms.kwCraftingSmelter);
         xelib.AddElement(newRecipe, 'Conditions');
         var condition = xelib.GetElement(newRecipe, 'Conditions\\[0]');
-        updateHasPerkCondition(newRecipe, condition, 10000000, 1, s.perkSmithingMeltdown);
+        updateHasPerkCondition(newRecipe, condition, 10000000, 1, SkyrimForms.perkSmithingMeltdown);
 
         if (perk) {
             createHasPerkCondition(newRecipe, 10000000, 1, perk);
@@ -1034,7 +1037,7 @@ export default class WeaponPatcher {
             xelib.SetValue(secondaryItem, 'CNTO\\Item', ingredient);
             xelib.SetUIntValue(secondaryItem, 'CNTO\\Count', 1);
         });
-        xelib.AddElementValue(newRecipe, 'BNAM', this.statics.kwCraftingSmithingForge);
+        xelib.AddElementValue(newRecipe, 'BNAM', SkyrimForms.kwCraftingSmithingForge);
         xelib.AddElementValue(newRecipe, 'NAM1', '1');
         xelib.AddElementValue(newRecipe, 'CNAM', xelib.GetHexFormID(weapon));
         xelib.AddElement(newRecipe, 'Conditions');
@@ -1058,8 +1061,8 @@ export default class WeaponPatcher {
     patchBoundWeapon(weapon: handle): void {
         var kwda = getKwda(weapon);
 
-        if (xelib.GetFlag(weapon, 'DNAM\\Flags2', 'Bound Weapon') && !kwda(this.statics.kwWeapTypeBoundWeapon)) {
-            xelib.AddElementValue(weapon, 'KWDA\\.', this.statics.kwWeapTypeBoundWeapon);
+        if (xelib.GetFlag(weapon, 'DNAM\\Flags2', 'Bound Weapon') && !kwda(SkyrimForms.kwWeapTypeBoundWeapon)) {
+            xelib.AddElementValue(weapon, 'KWDA\\.', SkyrimForms.kwWeapTypeBoundWeapon);
         }
     }
 
@@ -1096,102 +1099,100 @@ export default class WeaponPatcher {
     }
 
     createKeywordMaps(): void {
-        var s = this.statics;
-
         this.skyreTypesMap = [{
-            kwda: s.kwWeapTypeBastardSword,
+            kwda: SkyrimForms.kwWeapTypeBastardSword,
             name: 'Bastard'
         }, {
-            kwda: s.kwWeapTypeBattlestaff,
+            kwda: SkyrimForms.kwWeapTypeBattlestaff,
             name: 'Battlestaff'
         }, {
-            kwda: s.kwWeapTypeBroadsword,
+            kwda: SkyrimForms.kwWeapTypeBroadsword,
             name: 'Broadsword'
         }, {
-            kwda: s.kwWeapTypeClub,
+            kwda: SkyrimForms.kwWeapTypeClub,
             name: 'Club'
         }, {
-            kwda: s.kwWeapTypeCrossbow,
+            kwda: SkyrimForms.kwWeapTypeCrossbow,
             name: 'Crossbow'
         }, {
-            kwda: s.kwWeapTypeGlaive,
+            kwda: SkyrimForms.kwWeapTypeGlaive,
             name: 'Glaive'
         }, {
-            kwda: s.kwWeapTypeHalberd,
+            kwda: SkyrimForms.kwWeapTypeHalberd,
             name: 'Halberd'
         }, {
-            kwda: s.kwWeapTypeHatchet,
+            kwda: SkyrimForms.kwWeapTypeHatchet,
             name: 'Hatchet'
         }, {
-            kwda: s.kwWeapTypeKatana,
+            kwda: SkyrimForms.kwWeapTypeKatana,
             name: 'Katana'
         }, {
-            kwda: s.kwWeapTypeLongbow,
+            kwda: SkyrimForms.kwWeapTypeLongbow,
             name: 'Longbow'
         }, {
-            kwda: s.kwWeapTypeLongmace,
+            kwda: SkyrimForms.kwWeapTypeLongmace,
             name: 'Longmace'
         }, {
-            kwda: s.kwWeapTypeLongsword,
+            kwda: SkyrimForms.kwWeapTypeLongsword,
             name: 'Longsword'
         }, {
-            kwda: s.kwWeapTypeMaul,
+            kwda: SkyrimForms.kwWeapTypeMaul,
             name: 'Maul'
         }, {
-            kwda: s.kwWeapTypeNodachi,
+            kwda: SkyrimForms.kwWeapTypeNodachi,
             name: 'Nodachi'
         }, {
-            kwda: s.kwWeapTypeSaber,
+            kwda: SkyrimForms.kwWeapTypeSaber,
             name: 'Saber'
         }, {
-            kwda: s.kwWeapTypeScimitar,
+            kwda: SkyrimForms.kwWeapTypeScimitar,
             name: 'Scimitar'
         }, {
-            kwda: s.kwWeapTypeShortbow,
+            kwda: SkyrimForms.kwWeapTypeShortbow,
             name: 'Shortbow'
         }, {
-            kwda: s.kwWeapTypeShortspear,
+            kwda: SkyrimForms.kwWeapTypeShortspear,
             name: 'Shortspear'
         }, {
-            kwda: s.kwWeapTypeShortsword,
+            kwda: SkyrimForms.kwWeapTypeShortsword,
             name: 'Shortsword'
         }, {
-            kwda: s.kwWeapTypeTanto,
+            kwda: SkyrimForms.kwWeapTypeTanto,
             name: 'Tanto'
         }, {
-            kwda: s.kwWeapTypeUnarmed,
+            kwda: SkyrimForms.kwWeapTypeUnarmed,
             name: 'Unarmed'
         }, {
-            kwda: s.kwWeapTypeWakizashi,
+            kwda: SkyrimForms.kwWeapTypeWakizashi,
             name: 'Wakizashi'
         }, {
-            kwda: s.kwWeapTypeYari,
+            kwda: SkyrimForms.kwWeapTypeYari,
             name: 'Yari'
         }]; // prettier-ignore
 
         this.vanillaTypesMap = [{
-            kwda: s.kwWeapTypeBattleaxe,
+            kwda: SkyrimForms.kwWeapTypeBattleaxe,
             name: "Battleaxe"
         }, {
-            kwda: s.kwWeapTypeBow,
+            kwda: SkyrimForms.kwWeapTypeBow,
             name: "Bow"
         }, {
-            kwda: s.kwWeapTypeSword,
+            kwda: SkyrimForms.kwWeapTypeSword,
             name: "Broadsword"
         }, {
-            kwda: s.kwWeapTypeDagger,
+            kwda: SkyrimForms.kwWeapTypeDagger,
             name: "Dagger"
         }, {
-            kwda: s.kwWeapTypeGreatsword,
+            kwda: SkyrimForms.kwWeapTypeGreatsword,
             name: "Greatsword"
         }, {
-            kwda: s.kwWeapTypeMace,
+            kwda: SkyrimForms.kwWeapTypeMace,
             name: "Mace"
         }, {
-            kwda: s.kwWeapTypeWaraxe,
+            kwda: SkyrimForms.kwWeapTypeWaraxe,
             name: "Waraxe"
         }, {
-            kwda: s.kwWeapTypeWarhammer,
+            kwda: SkyrimForms.kwWeapTypeWarhammer,
             name: "Warhammer"
         }];
 
@@ -1199,159 +1200,159 @@ export default class WeaponPatcher {
 
         this.keywordMaterialMap = [{
             name: 'Dawnguard',
-            kwda: s.kwWAF_DLC1WeapMaterialDawnguard,
-            input: s.ingotSteel,
-            perk: s.perkSmithingSteel
+            kwda: SkyrimForms.kwWAF_DLC1WeapMaterialDawnguard,
+            input: SkyrimForms.ingotSteel,
+            perk: SkyrimForms.perkSmithingSteel
         }, {
             name: 'Daedric',
-            kwda: s.kwWAF_TreatAsMaterialDaedric,
-            input: s.ingotEbony,
-            perk: s.perkSmithingDaedric
+            kwda: SkyrimForms.kwWAF_TreatAsMaterialDaedric,
+            input: SkyrimForms.ingotEbony,
+            perk: SkyrimForms.perkSmithingDaedric
         }, {
             name: 'Dragonbone',
-            kwda: s.kwWAF_TreatAsMaterialDragon,
-            input: s.dragonbone,
-            perk: s.perkSmithingDragon
+            kwda: SkyrimForms.kwWAF_TreatAsMaterialDragon,
+            input: SkyrimForms.dragonbone,
+            perk: SkyrimForms.perkSmithingDragon
         }, {
             name: 'Dwarven',
-            kwda: s.kwWAF_TreatAsMaterialDwarven,
-            input: s.ingotDwarven,
-            perk: s.perkSmithingDwarven
+            kwda: SkyrimForms.kwWAF_TreatAsMaterialDwarven,
+            input: SkyrimForms.ingotDwarven,
+            perk: SkyrimForms.perkSmithingDwarven
         }, {
             name: 'Ebony',
-            kwda: s.kwWAF_TreatAsMaterialEbony,
-            input: s.ingotEbony,
-            perk: s.perkSmithingEbony
+            kwda: SkyrimForms.kwWAF_TreatAsMaterialEbony,
+            input: SkyrimForms.ingotEbony,
+            perk: SkyrimForms.perkSmithingEbony
         }, {
             name: 'Elven',
-            kwda: s.kwWAF_TreatAsMaterialElven,
-            input: s.ingotMoonstone,
-            perk: s.perkSmithingElven
+            kwda: SkyrimForms.kwWAF_TreatAsMaterialElven,
+            input: SkyrimForms.ingotMoonstone,
+            perk: SkyrimForms.perkSmithingElven
         }, {
             name: 'Glass',
-            kwda: s.kwWAF_TreatAsMaterialGlass,
-            input: s.ingotMalachite,
-            perk: s.perkSmithingGlass
+            kwda: SkyrimForms.kwWAF_TreatAsMaterialGlass,
+            input: SkyrimForms.ingotMalachite,
+            perk: SkyrimForms.perkSmithingGlass
         }, {
             name: 'Iron',
-            kwda: s.kwWAF_TreatAsMaterialIron,
-            input: s.ingotIron,
+            kwda: SkyrimForms.kwWAF_TreatAsMaterialIron,
+            input: SkyrimForms.ingotIron,
             perk: null
         }, {
             name: 'Orcish',
-            kwda: s.kwWAF_TreatAsMaterialOrcish,
-            input: s.ingotOrichalcum,
-            perk: s.perkSmithingOrcish
+            kwda: SkyrimForms.kwWAF_TreatAsMaterialOrcish,
+            input: SkyrimForms.ingotOrichalcum,
+            perk: SkyrimForms.perkSmithingOrcish
         }, {
             name: 'Steel',
-            kwda: s.kwWAF_TreatAsMaterialSteel,
-            input: s.ingotSteel,
-            perk: s.perkSmithingSteel
+            kwda: SkyrimForms.kwWAF_TreatAsMaterialSteel,
+            input: SkyrimForms.ingotSteel,
+            perk: SkyrimForms.perkSmithingSteel
         }, {
             name: 'Blades',
-            kwda: s.kwWAF_WeapMaterialBlades,
-            input: s.ingotSteel,
-            perk: s.perkSmithingSteel
+            kwda: SkyrimForms.kwWAF_WeapMaterialBlades,
+            input: SkyrimForms.ingotSteel,
+            perk: SkyrimForms.perkSmithingSteel
         }, {
             name: 'Forsworn',
-            kwda: s.kwWAF_WeapMaterialForsworn,
-            input: s.charcoal,
+            kwda: SkyrimForms.kwWAF_WeapMaterialForsworn,
+            input: SkyrimForms.charcoal,
             perk: null
         }, {
             name: 'Daedric',
-            kwda: s.kwWeapMaterialDaedric,
-            input: s.ingotEbony,
-            perk: s.perkSmithingDaedric
+            kwda: SkyrimForms.kwWeapMaterialDaedric,
+            input: SkyrimForms.ingotEbony,
+            perk: SkyrimForms.perkSmithingDaedric
         }, {
             name: 'Dragonbone',
-            kwda: s.kwWeapMaterialDragonbone,
-            input: s.dragonbone,
-            perk: s.perkSmithingDragon
+            kwda: SkyrimForms.kwWeapMaterialDragonbone,
+            input: SkyrimForms.dragonbone,
+            perk: SkyrimForms.perkSmithingDragon
         }, {
             name: 'Draugr',
-            kwda: s.kwWeapMaterialDraugr,
-            input: s.ingotSteel,
-            perk: s.perkSmithingAdvanced
+            kwda: SkyrimForms.kwWeapMaterialDraugr,
+            input: SkyrimForms.ingotSteel,
+            perk: SkyrimForms.perkSmithingAdvanced
         }, {
             name: 'Draugr Honed',
-            kwda: s.kwWeapMaterialDraugrHoned,
-            input: s.ingotSteel,
-            perk: s.perkSmithingAdvanced
+            kwda: SkyrimForms.kwWeapMaterialDraugrHoned,
+            input: SkyrimForms.ingotSteel,
+            perk: SkyrimForms.perkSmithingAdvanced
         }, {
             name: 'Dwarven',
-            kwda: s.kwWeapMaterialDwarven,
-            input: s.ingotDwarven,
-            perk: s.perkSmithingDwarven
+            kwda: SkyrimForms.kwWeapMaterialDwarven,
+            input: SkyrimForms.ingotDwarven,
+            perk: SkyrimForms.perkSmithingDwarven
         }, {
             name: 'Ebony',
-            kwda: s.kwWeapMaterialEbony,
-            input: s.ingotEbony,
-            perk: s.perkSmithingEbony
+            kwda: SkyrimForms.kwWeapMaterialEbony,
+            input: SkyrimForms.ingotEbony,
+            perk: SkyrimForms.perkSmithingEbony
         }, {
             name: 'Elven',
-            kwda: s.kwWeapMaterialElven,
-            input: s.ingotMoonstone,
-            perk: s.perkSmithingElven
+            kwda: SkyrimForms.kwWeapMaterialElven,
+            input: SkyrimForms.ingotMoonstone,
+            perk: SkyrimForms.perkSmithingElven
         }, {
             name: 'Falmer',
-            kwda: s.kwWeapMaterialFalmer,
-            input: s.chaurusChitin,
-            perk: s.perkSmithingElven
+            kwda: SkyrimForms.kwWeapMaterialFalmer,
+            input: SkyrimForms.chaurusChitin,
+            perk: SkyrimForms.perkSmithingElven
         }, {
             name: 'Falmer Honed',
-            kwda: s.kwWeapMaterialFalmerHoned,
-            input: s.chaurusChitin,
-            perk: s.perkSmithingElven
+            kwda: SkyrimForms.kwWeapMaterialFalmerHoned,
+            input: SkyrimForms.chaurusChitin,
+            perk: SkyrimForms.perkSmithingElven
         }, {
             name: 'Glass',
-            kwda: s.kwWeapMaterialGlass,
-            input: s.ingotMalachite,
-            perk: s.perkSmithingGlass
+            kwda: SkyrimForms.kwWeapMaterialGlass,
+            input: SkyrimForms.ingotMalachite,
+            perk: SkyrimForms.perkSmithingGlass
         }, {
             name: 'Imperial',
-            kwda: s.kwWeapMaterialImperial,
-            input: s.ingotSteel,
-            perk: s.perkSmithingSteel
+            kwda: SkyrimForms.kwWeapMaterialImperial,
+            input: SkyrimForms.ingotSteel,
+            perk: SkyrimForms.perkSmithingSteel
         }, {
             name: 'Iron',
-            kwda: s.kwWeapMaterialIron,
-            input: s.ingotIron,
+            kwda: SkyrimForms.kwWeapMaterialIron,
+            input: SkyrimForms.ingotIron,
             perk: null
         }, {
             name: 'Orcish',
-            kwda: s.kwWeapMaterialOrcish,
-            input: s.ingotOrichalcum,
-            perk: s.perkSmithingOrcish
+            kwda: SkyrimForms.kwWeapMaterialOrcish,
+            input: SkyrimForms.ingotOrichalcum,
+            perk: SkyrimForms.perkSmithingOrcish
         }, {
             name: 'Silver',
-            kwda: s.kwWeapMaterialSilver,
-            input: s.ingotSilver,
-            perk: s.perkSmithingSilver
+            kwda: SkyrimForms.kwWeapMaterialSilver,
+            input: SkyrimForms.ingotSilver,
+            perk: SkyrimForms.perkSmithingSilver
         }, {
             name: 'Silver Refined',
-            kwda: s.kwWeapMaterialSilverRefined,
-            input: s.ingotSilver,
-            perk: s.perkSmithingSilver
+            kwda: SkyrimForms.kwWeapMaterialSilverRefined,
+            input: SkyrimForms.ingotSilver,
+            perk: SkyrimForms.perkSmithingSilver
         }, {
             name: 'Steel',
-            kwda: s.kwWeapMaterialSteel,
-            input: s.ingotSteel,
-            perk: s.perkSmithingSteel
+            kwda: SkyrimForms.kwWeapMaterialSteel,
+            input: SkyrimForms.ingotSteel,
+            perk: SkyrimForms.perkSmithingSteel
         }, {
             name: 'Wood',
-            kwda: s.kwWeapMaterialWood,
-            input: s.charcoal,
+            kwda: SkyrimForms.kwWeapMaterialWood,
+            input: SkyrimForms.charcoal,
             perk: null
         }, {
             name: 'Stalhrim',
-            kwda: s.kwDLC2WeaponMaterialStalhrim,
-            input: s.oreStalhrim,
-            perk: s.perkSmithingAdvanced
+            kwda: SkyrimForms.kwDLC2WeaponMaterialStalhrim,
+            input: SkyrimForms.oreStalhrim,
+            perk: SkyrimForms.perkSmithingAdvanced
         }, {
             name: 'Nordic',
-            kwda: s.kwWeapMaterialNordic,
-            input: s.ingotQuicksilver,
-            perk: s.perkSmithingAdvanced
+            kwda: SkyrimForms.kwWeapMaterialNordic,
+            input: SkyrimForms.ingotQuicksilver,
+            perk: SkyrimForms.perkSmithingAdvanced
         }];
     }
 

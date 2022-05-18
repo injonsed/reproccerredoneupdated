@@ -1,6 +1,6 @@
 import {
     getWinningLinksTo, updateHasPerkCondition,
-    createGetItemCountCondition
+    createGetItemCountCondition, SkyrimForms
 } from "./core";
 import { LocData } from "./localization";
 
@@ -14,8 +14,6 @@ export default class ProjectilePatcher {
     patchFile: handle;
     rules: any;
     settings: DefaultSettings;
-
-    statics: IFormIDList;
     lang: string;
 
     patch: PatchFunction;
@@ -29,7 +27,6 @@ export default class ProjectilePatcher {
         this.patchFile = pf;
         this.rules = locals.rules.projectiles;
         this.settings = settings;
-        this.statics = locals.statics;
         this.lang = settings.lang;
 
         this.load = {
@@ -130,7 +127,7 @@ export default class ProjectilePatcher {
         const tag = "Explosive";
         var desc = LocData.projectile[tag].desc[this.lang];
 
-        return this.createExplosiveAmmo(ammo, this.statics.expExploding, tag, desc);
+        return this.createExplosiveAmmo(ammo, SkyrimForms.expExploding, tag, desc);
     }
 
     createTimebombAmmo(ammo: handle): handle {
@@ -152,7 +149,7 @@ export default class ProjectilePatcher {
         xelib.SetFlag(projectile, 'DATA\\Flags', 'Explosion', true);
         xelib.SetFlag(projectile, 'DATA\\Flags', 'Alt. Trigger', true);
         xelib.SetFloatValue(projectile, 'DATA\\Explosion - Alt. Trigger - Timer', timer);
-        xelib.SetValue(projectile, 'DATA\\Explosion', this.statics.expTimebomb);
+        xelib.SetValue(projectile, 'DATA\\Explosion', SkyrimForms.expTimebomb);
         this.helpers.cacheRecord(timebombAmmo, newEditorId);
         return timebombAmmo;
     }
@@ -161,35 +158,35 @@ export default class ProjectilePatcher {
         const tag = "Frost";
         var desc = LocData.projectile[tag].desc[this.lang];
 
-        return this.createExplosiveAmmo(ammo, this.statics.expElementalFrost, tag, desc);
+        return this.createExplosiveAmmo(ammo, SkyrimForms.expElementalFrost, tag, desc);
     }
 
     createFireAmmo(ammo: handle): handle {
         const tag = "Fire";
         var desc = LocData.projectile[tag].desc[this.lang];
 
-        return this.createExplosiveAmmo(ammo, this.statics.expElementalFire, tag, desc);
+        return this.createExplosiveAmmo(ammo, SkyrimForms.expElementalFire, tag, desc);
     }
 
     createShockAmmo(ammo: handle): handle {
         const tag = "Shock";
         var desc = LocData.projectile[tag].desc[this.lang];
 
-        return this.createExplosiveAmmo(ammo, this.statics.expElementalShock, tag, desc);
+        return this.createExplosiveAmmo(ammo, SkyrimForms.expElementalShock, tag, desc);
     }
 
     createBarbedAmmo(ammo: handle): handle {
         const tag = "Barbed";
         var desc = LocData.projectile[tag].desc[this.lang];
 
-        return this.createExplosiveAmmo(ammo, this.statics.expBarbed, tag, desc);
+        return this.createExplosiveAmmo(ammo, SkyrimForms.expBarbed, tag, desc);
     }
 
     createHeavyweightAmmo(ammo: handle): handle {
         const tag = "Heavyweight";
         var desc = LocData.projectile[tag].desc[this.lang];
 
-        return this.createExplosiveAmmo(ammo, this.statics.expHeavyweight, tag, desc);
+        return this.createExplosiveAmmo(ammo, SkyrimForms.expHeavyweight, tag, desc);
     }
 
     createLightsourceAmmo(ammo: handle): handle {
@@ -205,7 +202,7 @@ export default class ProjectilePatcher {
         this.patchStats(lightsourceAmmo);
 
         var projectile = xelib.GetWinningOverride(xelib.GetLinksTo(lightsourceAmmo, 'DATA\\Projectile'));
-        xelib.SetValue(projectile, 'DATA\\Light', this.statics.lightLightsource);
+        xelib.SetValue(projectile, 'DATA\\Light', SkyrimForms.lightLightsource);
         this.helpers.cacheRecord(lightsourceAmmo, newEditorId);
         return lightsourceAmmo;
     }
@@ -214,14 +211,14 @@ export default class ProjectilePatcher {
         const tag = "Noisemaker";
         var desc = LocData.projectile[tag].desc[this.lang];
 
-        return this.createExplosiveAmmo(ammo, this.statics.expNoisemaker, tag, desc);
+        return this.createExplosiveAmmo(ammo, SkyrimForms.expNoisemaker, tag, desc);
     }
 
     createNeuralgiaAmmo(ammo: handle): handle {
         const tag = "Neuralgia";
         var desc = LocData.projectile[tag].desc[this.lang];
 
-        return this.createExplosiveAmmo(ammo, this.statics.expNeuralgia, tag, desc);
+        return this.createExplosiveAmmo(ammo, SkyrimForms.expNeuralgia, tag, desc);
     }
 
     addCraftingRecipe(baseAmmo: handle, newAmmo: handle, secondaryIngredients: Array<string>, requiredPerks: Array<string>): void {
@@ -242,7 +239,7 @@ export default class ProjectilePatcher {
             xelib.SetValue(secondaryItem, 'CNTO\\Item', ingredient);
             xelib.SetUIntValue(secondaryItem, 'CNTO\\Count', secondaryIngredientInputCount);
         });
-        xelib.AddElementValue(newRecipe, 'BNAM', this.statics.kwCraftingSmithingForge);
+        xelib.AddElementValue(newRecipe, 'BNAM', SkyrimForms.kwCraftingSmithingForge);
         xelib.AddElementValue(newRecipe, 'NAM1', "".concat(String(ammoReforgeOutputCount)));
         xelib.AddElementValue(newRecipe, 'CNAM', xelib.GetHexFormID(newAmmo));
         xelib.AddElement(newRecipe, 'Conditions');
@@ -261,64 +258,62 @@ export default class ProjectilePatcher {
     }
 
     createCrossbowOnlyVariants(ammo: handle): void {
-        var s = this.statics;
         var ingredients = [];
         var perks = [];
 
         var fireAmmo = this.createFireAmmo(ammo);
-        ingredients = [s.pettySoulGem, s.fireSalt];
-        perks = [s.perkEnchantingElementalBombard0];
+        ingredients = [SkyrimForms.pettySoulGem, SkyrimForms.fireSalt];
+        perks = [SkyrimForms.perkEnchantingElementalBombard0];
         this.addCraftingRecipe(ammo, fireAmmo, ingredients, perks);
 
         var frostAmmo = this.createFrostAmmo(ammo);
-        ingredients = [s.pettySoulGem, s.frostSalt];
-        perks = [s.perkEnchantingElementalBombard0];
+        ingredients = [SkyrimForms.pettySoulGem, SkyrimForms.frostSalt];
+        perks = [SkyrimForms.perkEnchantingElementalBombard0];
         this.addCraftingRecipe(ammo, frostAmmo, ingredients, perks);
 
         var shockAmmo = this.createShockAmmo(ammo);
-        ingredients = [s.pettySoulGem, s.voidSalt];
-        perks = [s.perkEnchantingElementalBombard0];
+        ingredients = [SkyrimForms.pettySoulGem, SkyrimForms.voidSalt];
+        perks = [SkyrimForms.perkEnchantingElementalBombard0];
         this.addCraftingRecipe(ammo, shockAmmo, ingredients, perks);
 
         var neuralgiaAmmo = this.createNeuralgiaAmmo(ammo);
-        ingredients = [s.pettySoulGem, s.deathBell];
-        perks = [s.perkEnchantingElementalBombard1];
+        ingredients = [SkyrimForms.pettySoulGem, SkyrimForms.deathBell];
+        perks = [SkyrimForms.perkEnchantingElementalBombard1];
         this.addCraftingRecipe(ammo, neuralgiaAmmo, ingredients, perks);
 
         var barbedAmmo = this.createBarbedAmmo(ammo);
-        ingredients = [s.ingotSteel, s.deathBell];
-        perks = [s.perkMarksmanshipAdvancedMissilecraft1];
+        ingredients = [SkyrimForms.ingotSteel, SkyrimForms.deathBell];
+        perks = [SkyrimForms.perkMarksmanshipAdvancedMissilecraft1];
         this.addCraftingRecipe(ammo, barbedAmmo, ingredients, perks);
 
         var heavyweightAmmo = this.createHeavyweightAmmo(ammo);
-        ingredients = [s.ingotSteel, s.boneMeal];
-        perks = [s.perkMarksmanshipAdvancedMissilecraft2];
+        ingredients = [SkyrimForms.ingotSteel, SkyrimForms.boneMeal];
+        perks = [SkyrimForms.perkMarksmanshipAdvancedMissilecraft2];
         this.addCraftingRecipe(ammo, heavyweightAmmo, ingredients, perks);
     }
 
     createVariants(ammo: handle): void {
-        var s = this.statics;
         var ingredients = [];
         var perks = [];
 
         var explodingAmmo = this.createExplodingAmmo(ammo);
-        ingredients = [s.ale, s.torchbugThorax];
-        perks = [s.perkAlchemyFuse];
+        ingredients = [SkyrimForms.ale, SkyrimForms.torchbugThorax];
+        perks = [SkyrimForms.perkAlchemyFuse];
         this.addCraftingRecipe(ammo, explodingAmmo, ingredients, perks);
 
         var timebombAmmo = this.createTimebombAmmo(ammo);
-        ingredients = [s.fireSalt, s.torchbugThorax];
-        perks = [s.perkAlchemyAdvancedExplosives];
+        ingredients = [SkyrimForms.fireSalt, SkyrimForms.torchbugThorax];
+        perks = [SkyrimForms.perkAlchemyAdvancedExplosives];
         this.addCraftingRecipe(ammo, timebombAmmo, ingredients, perks);
 
         var lightsourceAmmo = this.createLightsourceAmmo(ammo);
-        ingredients = [s.torchbugThorax, s.leatherStrips];
-        perks = [s.perkSneakThiefsToolbox0];
+        ingredients = [SkyrimForms.torchbugThorax, SkyrimForms.leatherStrips];
+        perks = [SkyrimForms.perkSneakThiefsToolbox0];
         this.addCraftingRecipe(ammo, lightsourceAmmo, ingredients, perks);
 
         var noisemakerAmmo = this.createNoisemakerAmmo(ammo);
-        ingredients = [s.pettySoulGem, s.boneMeal];
-        perks = [s.perkSneakThiefsToolbox0];
+        ingredients = [SkyrimForms.pettySoulGem, SkyrimForms.boneMeal];
+        perks = [SkyrimForms.perkSneakThiefsToolbox0];
         this.addCraftingRecipe(ammo, noisemakerAmmo, ingredients, perks);
 
         var edid = xelib.EditorID(ammo);
@@ -355,18 +350,17 @@ export default class ProjectilePatcher {
         if (found)
             return;
 
-        var s = this.statics;
         var secondaryIngredients = [];
         var requiredPerks = [];
         var strongAmmo = this.createStrongAmmo(ammo);
-        secondaryIngredients = [s.ingotIron];
-        requiredPerks = [s.perkMarksmanshipAdvancedMissilecraft0];
+        secondaryIngredients = [SkyrimForms.ingotIron];
+        requiredPerks = [SkyrimForms.perkMarksmanshipAdvancedMissilecraft0];
         this.addCraftingRecipe(ammo, strongAmmo, secondaryIngredients, requiredPerks);
         this.createVariants(strongAmmo);
 
         var strongestAmmo = this.createStrongestAmmo(ammo);
-        secondaryIngredients = [s.ingotSteel, s.ingotIron];
-        requiredPerks = [s.perkMarksmanshipAdvancedMissilecraft0];
+        secondaryIngredients = [SkyrimForms.ingotSteel, SkyrimForms.ingotIron];
+        requiredPerks = [SkyrimForms.perkMarksmanshipAdvancedMissilecraft0];
         this.addCraftingRecipe(ammo, strongestAmmo, secondaryIngredients, requiredPerks);
         this.createVariants(strongestAmmo);
     }
