@@ -12,7 +12,7 @@ function hasWord(list: Array<string>, name: string): boolean {
     return list.some((e) => name.includes(e));
 }
 
-export class InteractionIconsFloraPatcher {
+export class InteractionIconsFloraPatcher implements ZEditPatcher {
 
     helpers: xelibHelpers;
     settings: DefaultSettings;

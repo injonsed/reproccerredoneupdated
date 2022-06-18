@@ -1,6 +1,6 @@
 import { clamp, getWinningLinksTo, safeHasFlag } from "./core";
 
-export default class AlchemyPatcher {
+export default class AlchemyPatcher implements ZEditPatcher {
 
     baseStats: AlchemyBaseStats;
     helpers: xelibHelpers;

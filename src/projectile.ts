@@ -4,7 +4,7 @@ import {
 } from "./core";
 import { LocData } from "./localization";
 
-export default class ProjectilePatcher {
+export default class ProjectilePatcher implements ZEditPatcher {
 
     names: { [key: string]: string; };
     editorIds: { [key: string]: number; };
@@ -60,7 +60,7 @@ export default class ProjectilePatcher {
             return false;
 
         if (!this.rules.baseStats.find((bs: IProjectileStats) => {
-            return (name.includes(bs.identifier) || edid.includes(bs.identifier));
+            return (name.includes(bs.identifier!) || edid.includes(bs.identifier!));
         }))
             return false;
 
@@ -258,8 +258,8 @@ export default class ProjectilePatcher {
     }
 
     createCrossbowOnlyVariants(ammo: handle): void {
-        var ingredients = [];
-        var perks = [];
+        var ingredients: Array<string> = [];
+        var perks: Array<string> = [];
 
         var fireAmmo = this.createFireAmmo(ammo);
         ingredients = [SkyrimForms.pettySoulGem, SkyrimForms.fireSalt];
@@ -293,8 +293,8 @@ export default class ProjectilePatcher {
     }
 
     createVariants(ammo: handle): void {
-        var ingredients = [];
-        var perks = [];
+        var ingredients: Array<string> = [];
+        var perks: Array<string> = [];
 
         var explodingAmmo = this.createExplodingAmmo(ammo);
         ingredients = [SkyrimForms.ale, SkyrimForms.torchbugThorax];
@@ -318,7 +318,7 @@ export default class ProjectilePatcher {
 
         var edid = xelib.EditorID(ammo);
         var found = this.rules.baseStats.find((bs: IProjectileStats) => {
-            return edid.includes(bs.identifier) && bs.type !== 'ARROW';
+            return edid.includes(bs.identifier!) && bs.type !== 'ARROW';
         });
 
         if (found) {
@@ -344,15 +344,16 @@ export default class ProjectilePatcher {
         var edid = xelib.EditorID(ammo);
 
         var found = this.rules.baseStats.find((bs: IProjectileStats) => {
-            return edid.includes(bs.identifier) && bs.type !== 'BOLT';
+            return edid.includes(bs.identifier!) && bs.type !== 'BOLT';
         });
 
         if (found)
             return;
 
-        var secondaryIngredients = [];
-        var requiredPerks = [];
+        var secondaryIngredients: Array<string> = [];
+        var requiredPerks: Array<string> = [];
         var strongAmmo = this.createStrongAmmo(ammo);
+
         secondaryIngredients = [SkyrimForms.ingotIron];
         requiredPerks = [SkyrimForms.perkMarksmanshipAdvancedMissilecraft0];
         this.addCraftingRecipe(ammo, strongAmmo, secondaryIngredients, requiredPerks);
@@ -402,7 +403,7 @@ export default class ProjectilePatcher {
         var newDamage = 0;
         var failed = false;
         this.rules.baseStats.some((bs: IProjectileStats) => {
-            if (!edid.includes(bs.identifier))
+            if (!edid.includes(bs.identifier!))
                 return false;
 
             newGravity = bs.gravity;
@@ -413,7 +414,7 @@ export default class ProjectilePatcher {
         });
 
         this.rules.materialStats.some((ms: IProjectileStats) => {
-            if (edid.includes(ms.name) || (ms.edid && ms.edid !== null && edid.includes(ms.edid))) {
+            if (edid.includes(ms.name!) || (ms.edid && ms.edid !== null && edid.includes(ms.edid))) {
                 newGravity += ms.gravity;
                 newSpeed += ms.speed;
                 newDamage += ms.damage;
@@ -423,7 +424,7 @@ export default class ProjectilePatcher {
         });
 
         this.rules.modifierStats.some((ms: IProjectileStats) => {
-            if (name.includes(ms.name) || edid.includes(ms.name)) {
+            if (name.includes(ms.name!) || edid.includes(ms.name!)) {
                 newGravity += ms.gravity;
                 newSpeed += ms.speed;
                 newDamage += ms.damage;

@@ -1,9 +1,9 @@
-import { addPerkScript, getValueFromName, getKwda, getModifierFromMap, getKeyword,
+import { addPerkScript, getValueFromName, getKwda, getModifierFromMap, findKeyword,
     overrideCraftingRecipes, safeHasArrayItem, createHasPerkCondition, createGetEquippedCondition,
     updateHasPerkCondition, removeTemperingConditions, createGetItemCountCondition, SkyrimForms, Records } from "./core";
 import { LocData } from "./localization";
 
-export default class WeaponPatcher {
+export default class WeaponPatcher implements ZEditPatcher {
 
     names: { [key: string]: string; };
     editorIds: { [key: string]: number; };
@@ -27,7 +27,6 @@ export default class WeaponPatcher {
     patch: PatchFunction;
     load: FilterEntry;
 
-
     constructor(helpers: xelibHelpers, locals: any, pf: handle, settings: DefaultSettings) {
         this.names = {};
         this.editorIds = {};
@@ -42,10 +41,6 @@ export default class WeaponPatcher {
         this.settings = settings;
         this.lang = settings.lang;
 
-        this.keywordMaterialMap = null;
-        this.keywordTypesMap = null;
-        this.vanillaTypesMap = null;
-        this.skyreTypesMap = null;
         this.createKeywordMaps();
 
         Object.keys(this.modifiers).map((k) => {
@@ -110,7 +105,7 @@ export default class WeaponPatcher {
             if (o.edid && o.edid !== null)
                 return name.includes(o.edid)
             else
-                return name.includes(o.substring);
+                return name.includes(o.substring!);
         });
         return override ? override.material : null;
     }
@@ -175,7 +170,7 @@ export default class WeaponPatcher {
             }
 
             if (e.name === 'Silver' && !xelib.HasScript(weapon, 'SilverSwordScript') && !xelib.HasArrayItem(weapon, 'KWDA', '', SkyrimForms.kwWeapTypeBow)) {
-                addPerkScript(weapon, 'SilverSwordScript', 'SilverPerk', e.perk);
+                addPerkScript(weapon, 'SilverSwordScript', 'SilverPerk', e.perk!);
             }
 
             xelib.AddElementValue(weapon, 'KWDA\\.', e.kwda);
@@ -250,17 +245,6 @@ export default class WeaponPatcher {
                 return false;
 
             if (xelib.EditorID(weapon).toLowerCase().includes(e.name.toLowerCase()) || xelib.FullName(weapon).includes(e.name)) {
-                const weapTypeIndex = getKeyword(weapon, 'WeapType');
-                var weapType: string;
-                if (xelib.GetValue(weapon, Records.DataSkill).toUpperCase().includes('ONE'))
-                    weapType = SkyrimForms.kwdaWeapTypeAny1H;
-                else
-                    weapType = SkyrimForms.kwdaWeapTypeAny2H;
-
-                if (weapTypeIndex !== null) {
-                    xelib.RemoveElement(weapon, weapTypeIndex);
-                    xelib.AddArrayItem(weapon, Records.Keywords, '', weapType);
-                }
                 xelib.AddArrayItem(weapon, 'KWDA', '', e.kwda);
 
                 if (e.kwda === SkyrimForms.kwWeapTypeYari && !xelib.HasScript(weapon, 'xxxPassiveYari')) {
@@ -277,13 +261,15 @@ export default class WeaponPatcher {
 
     getBaseDamage(weapon: handle): number {
         var kwda = getKwda(weapon);
-        var base = null;
+        var base!: number;
 
-        if (kwda(SkyrimForms.kwWeapTypeSword) || kwda(SkyrimForms.kwWeapTypeWaraxe) || kwda(SkyrimForms.kwWeapTypeMace) || kwda(SkyrimForms.kwWeapTypeDagger)) {
+        if (kwda(SkyrimForms.kwWeapTypeSword) || kwda(SkyrimForms.kwWeapTypeWaraxe) || kwda(SkyrimForms.kwWeapTypeMace) || kwda(SkyrimForms.kwWeapTypeDagger)
+            || kwda(SkyrimForms.kwdaWeapTypeAny1H)) {
             base = this.baseStats.damage.oneHanded;
         }
 
-        if (kwda(SkyrimForms.kwWeapTypeGreatsword) || kwda(SkyrimForms.kwWeapTypeWarhammer) || kwda(SkyrimForms.kwWeapTypeBattleaxe)) {
+        if (kwda(SkyrimForms.kwWeapTypeGreatsword) || kwda(SkyrimForms.kwWeapTypeWarhammer) || kwda(SkyrimForms.kwWeapTypeBattleaxe)
+            || kwda(SkyrimForms.kwdaWeapTypeAny1H)) {
             base = this.baseStats.damage.twoHanded;
         }
 
@@ -303,7 +289,7 @@ export default class WeaponPatcher {
     }
 
     getWeaponMaterialDamageModifier(weapon: handle): number {
-        var modifier = null;
+        var modifier: number;
         var edid = xelib.EditorID(weapon);
 
         if (xelib.GetFlag(weapon, 'DNAM\\Flags2', 'Bound Weapon')) {
@@ -521,12 +507,13 @@ export default class WeaponPatcher {
 
         var crossbowDesc = LocData.weapon.crossbow.Classic.desc[this.lang];
 
-        var requiredPerks = [];
-        var secondaryIngredients = [];
+        var requiredPerks: Array<string> = [];
+        var secondaryIngredients: Array<string> = [];
         var recurveName = LocData.weapon.crossbow.Recurve.name[this.lang];
         var newName = "".concat(recurveName, " ", this.names[weapon]);
         var newEditorId = this.newEditorId("REP_WEAPON_".concat(xelib.EditorID(weapon)));
         var newRecurveCrossbow = xelib.CopyElement(weapon, this.patchFile, true);
+
         this.helpers.cacheRecord(newRecurveCrossbow, newEditorId);
         xelib.AddElementValue(newRecurveCrossbow, 'EDID', newEditorId);
         xelib.AddElementValue(newRecurveCrossbow, 'FULL', newName);
@@ -1066,6 +1053,20 @@ export default class WeaponPatcher {
         }
     }
 
+    patchWeaponType(weapon: handle): void {
+        const weapTypeIndex = findKeyword(weapon, 'WeapType');
+        var weapType: string;
+        if (xelib.GetValue(weapon, Records.DataSkill).toUpperCase().includes('ONE'))
+            weapType = SkyrimForms.kwdaWeapTypeAny1H;
+        else
+            weapType = SkyrimForms.kwdaWeapTypeAny2H;
+
+        if (weapTypeIndex !== null) {
+            xelib.RemoveElement(weapon, weapTypeIndex);
+            xelib.AddArrayItem(weapon, Records.Keywords, '', weapType);
+        }
+    }
+
     patchFunc(weapon: handle): void {
         this.names[weapon] = xelib.FullName(weapon) || '';
 
@@ -1236,8 +1237,7 @@ export default class WeaponPatcher {
         }, {
             name: 'Iron',
             kwda: SkyrimForms.kwWAF_TreatAsMaterialIron,
-            input: SkyrimForms.ingotIron,
-            perk: null
+            input: SkyrimForms.ingotIron
         }, {
             name: 'Orcish',
             kwda: SkyrimForms.kwWAF_TreatAsMaterialOrcish,
@@ -1256,8 +1256,7 @@ export default class WeaponPatcher {
         }, {
             name: 'Forsworn',
             kwda: SkyrimForms.kwWAF_WeapMaterialForsworn,
-            input: SkyrimForms.charcoal,
-            perk: null
+            input: SkyrimForms.charcoal
         }, {
             name: 'Daedric',
             kwda: SkyrimForms.kwWeapMaterialDaedric,
@@ -1316,8 +1315,7 @@ export default class WeaponPatcher {
         }, {
             name: 'Iron',
             kwda: SkyrimForms.kwWeapMaterialIron,
-            input: SkyrimForms.ingotIron,
-            perk: null
+            input: SkyrimForms.ingotIron
         }, {
             name: 'Orcish',
             kwda: SkyrimForms.kwWeapMaterialOrcish,
@@ -1341,8 +1339,7 @@ export default class WeaponPatcher {
         }, {
             name: 'Wood',
             kwda: SkyrimForms.kwWeapMaterialWood,
-            input: SkyrimForms.charcoal,
-            perk: null
+            input: SkyrimForms.charcoal
         }, {
             name: 'Stalhrim',
             kwda: SkyrimForms.kwDLC2WeaponMaterialStalhrim,

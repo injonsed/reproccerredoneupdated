@@ -124,7 +124,7 @@ export default class ReproccerReborn implements ZEditPatcher {
     execute(patch: any, helpers: xelibHelpers, settings: any, locals: any) {
         var skyRePatchers = [AlchemyPatcher, ArmorPatcher, ProjectilePatcher, WeaponPatcher];
 
-        var patchers = [];
+        var patchers: Array<any> = [];
         patchers = patchers.concat(skyRePatchers);
         patchers = patchers.concat([InteractionIconsFloraPatcher, InteractionIconsActivatorPatcher]);
         patchers = patchers.concat([NPCPatcher]);

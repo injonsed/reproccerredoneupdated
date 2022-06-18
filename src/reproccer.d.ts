@@ -122,6 +122,14 @@ declare interface IJSONElement {
     substring?: string;
 }
 
+declare interface IMaterialElement extends IJSONElement {
+    material: string;
+}
+
+declare interface IMasqueradeElement extends IJSONElement {
+    masquerade: string;
+}
+
 declare interface IProjectileStats {
     range: number,
     speed: number,

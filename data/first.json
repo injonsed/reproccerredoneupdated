@@ -158,7 +158,7 @@
       { "armor": 26, "name": "Steel", "edid": null },
       { "armor": 33, "name": "Steel Plate", "edid": "SteelPlate" },
       { "armor": 18, "name": "Stormcloak", "edid": null },
-      { "armor": 27, "name": "Stormcloak Officer", "edid": "BearStormcloak" },
+      { "armor": 27, "name": "Stormcloak Officer", "edid": "ArmorStormcloakBear" },
       { "armor": 16, "name": "Studded", "edid": null },
       { "armor": 20, "name": "Thieves Guild", "edid": "ThievesGuild" },
       { "armor": 19, "name": "Vampire", "edid": null },
@@ -167,7 +167,7 @@
     "materialOverrides": [
       { "substring": "Morag Tong", "material": "CHITIN", "edid": "MoragTong" },
       { "substring": "Penitus", "material": "STEEL", "edid": "ArmorPenitus" },  
-      { "substring": "StormcloakOfficer", "material": "STORMCLOAK", "edid": "BearStormcloak" }
+      { "substring": "Stormcloak Officer", "material": "STORMCLOAK", "edid": "ArmorStormcloakBear" }
     ],
     "modifierOverrides": [
       { "multiplier": "1.2", "name": "Dummy Armor" }

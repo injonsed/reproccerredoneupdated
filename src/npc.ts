@@ -1,6 +1,6 @@
 import { Flags, Records } from "./core";
 
-export default class NPCPatcher {
+export default class NPCPatcher implements ZEditPatcher {
 
     helpers: xelibHelpers;
     settings: DefaultSettings;
@@ -106,10 +106,10 @@ export default class NPCPatcher {
     }
 
     patchFunc(npc: handle) {
-        const masterRecord = xelib.GetMasterRecord(npc);
-        var overrides = xelib.GetOverrides(npc).reverse();
+        // const masterRecord = xelib.GetMasterRecord(npc);
+        // this.log(`processing record ${xelib.EditorID(npc)}`);
 
-        this.log(`processing record ${xelib.EditorID(npc)}`);
+        var overrides = xelib.GetOverrides(npc).reverse();
         overrides.some((patchRecord) => {
             var formID = xelib.ElementToJSON(xelib.GetElement(patchRecord, 'Record Header\\FormID'));
             if (!this.settings.npc.plugins.find((val) => {

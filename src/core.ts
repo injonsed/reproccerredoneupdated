@@ -236,7 +236,7 @@ export var compare = function compare(a: string, b: string, inclusion: boolean):
 
 export function getValueFromName<T>(collection: Array<IJSONElement>, name: string, field1: string, field2: string, inclusion = true): T {
     var minLength = 0;
-    var value: T = null;
+    var value!: T;
     collection.forEach(function (thing) {
         if (thing.edid && thing.edid !== null && name.includes(thing.edid) && thing[field1].length > minLength) {
             value = thing[field2];
@@ -252,17 +252,17 @@ export function getValueFromName<T>(collection: Array<IJSONElement>, name: strin
     return value;
 }
 
-export function getModifierFromMap(map: Array<MaterialMap>, collection: Array<IJSONElement>, h: handle,
+export function getModifierFromMap(itemData: Array<MaterialMap>, collection: Array<IJSONElement>, h: handle,
                                     field1: string, field2: string, inclusion = true): number {
-    var modifier = null;
-    map.some(function (e) {
+    var modifier!: number;
+    itemData.some(function (e) {
         if (!xelib.HasArrayItem(h, 'KWDA', '', e.kwda)) {
             return false;
         }
 
-        modifier = getValueFromName(collection, e.name, field1, field2, inclusion);
+        modifier = getValueFromName<number>(collection, e.name, field1, field2, inclusion);
         if (modifier === null)
-            modifier = getValueFromName(collection, xelib.EditorID(h), field1, field2, inclusion);
+            modifier = getValueFromName<number>(collection, xelib.EditorID(h), field1, field2, inclusion);
         return true;
     });
     return modifier;
@@ -310,28 +310,25 @@ export function removeTemperingConditions(h: handle, arr: Array<MaterialMap>, pe
     });
     var condition = filteredArray.some((e) => {
         if (!xelib.HasArrayItem(h, 'Conditions', 'CTDA\\Parameter #1', perk)) {
-            var cond = xelib.GetArrayItem(h, 'Conditions', 'CTDA\\Parameter #1', e.perk);
+            var cond = xelib.GetArrayItem(h, 'Conditions', 'CTDA\\Parameter #1', e.perk!);
             updateHasPerkCondition(h, cond, 10000000, 1, perk);
         }
 
-        xelib.RemoveArrayItem(h, 'Conditions', 'CTDA\\Parameter #1', e.perk);
+        xelib.RemoveArrayItem(h, 'Conditions', 'CTDA\\Parameter #1', e.perk!);
         return false;
     });
     return condition;
 }
 
-export function getKeyword(elem: handle, val: string): string {
+export function findKeyword(elem: handle, val: string): string {
     const items = xelib.GetElements(elem, 'KWDA', false);
-    var path: string;
+    var path!: string;
 
-    const res = items.some((v, i) => {
+    items.some((v, i) => {
         path = `KWDA\\[${i}]`;
         return xelib.GetValue(elem, path).includes(val);
     });
-    if (res)
-        return path;
-    else
-        return null;
+    return path;
 }
 
 function isMergeableObject(value: any): boolean {

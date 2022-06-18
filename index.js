@@ -165,7 +165,7 @@
   };
   function getValueFromName(collection, name, field1, field2, inclusion = true) {
     var minLength = 0;
-    var value = null;
+    var value;
     collection.forEach(function(thing) {
       if (thing.edid && thing.edid !== null && name.includes(thing.edid) && thing[field1].length > minLength) {
         value = thing[field2];
@@ -180,9 +180,9 @@
     });
     return value;
   }
-  function getModifierFromMap(map, collection, h, field1, field2, inclusion = true) {
-    var modifier = null;
-    map.some(function(e) {
+  function getModifierFromMap(itemData, collection, h, field1, field2, inclusion = true) {
+    var modifier;
+    itemData.some(function(e) {
       if (!xelib.HasArrayItem(h, "KWDA", "", e.kwda)) {
         return false;
       }
@@ -237,17 +237,14 @@
     });
     return condition;
   }
-  function getKeyword(elem, val) {
+  function findKeyword(elem, val) {
     const items = xelib.GetElements(elem, "KWDA", false);
     var path;
-    const res = items.some((v, i) => {
+    items.some((v, i) => {
       path = `KWDA\\[${i}]`;
       return xelib.GetValue(elem, path).includes(val);
     });
-    if (res)
-      return path;
-    else
-      return null;
+    return path;
   }
   function isMergeableObject(value) {
     return isNonNullObject(value) && !isSpecial(value);
@@ -1797,9 +1794,6 @@
       this.rules = locals.rules.armor;
       this.settings = settings;
       this.lang = settings.lang;
-      this.heavyMaterialsMap = null;
-      this.lightMaterialsMap = null;
-      this.armorMaterialsMap = null;
       if (this.settings.armor.enabled) {
         this.updateGameSettings();
       }
@@ -1877,6 +1871,7 @@
       return faction;
     }
     addMeltdownRecipe(armor) {
+      let override = this.getArmorMaterialOverride(armor);
       var name = this.names[armor];
       var edid = xelib.EditorID(armor);
       var kwda = getKwda(armor);
@@ -1918,7 +1913,8 @@
         });
       }
       if (!input) {
-        this.log(armor, "Couldn't determine material - no meltdown recipe generated.");
+        if (!override)
+          this.log(armor, "Couldn't determine material - no meltdown recipe generated.");
         return;
       }
       var recipe = xelib.AddElement(this.patchFile, "Constructible Object\\COBJ");
@@ -1958,7 +1954,7 @@
         kwda = e.kwda;
         return true;
       });
-      if (!kwda && !perk) {
+      if (!kwda && !perk && this.getArmorMaterialOverride(armor) === null) {
         this.log(armor, "Couldn't determine material - tempering recipe not modified.");
       }
       return perk;
@@ -2165,7 +2161,7 @@
       if (armorType === 1) {
         rating = rating * 1.5;
       }
-      if (rating !== 0) {
+      if (rating > 0) {
         xelib.SetValue(armor, "DNAM", "".concat(String(rating)));
       } else if (rating === 0 && !xelib.GetFlag(armor, "Record Header\\Record Flags", "Non-Playable")) {
         this.log(armor, "New armor rating calculation result is zero, armor rating not modified!");
@@ -2181,11 +2177,9 @@
       });
     }
     overrideMaterialKeywords(armor) {
-      var override = this.getArmorMaterialOverride(this.names[armor]);
+      var override = this.getArmorMaterialOverride(armor);
       var input;
       var perk;
-      if (!override)
-        override = this.getArmorMaterialOverride(xelib.EditorID(armor));
       if (!override) {
         return;
       } else {
@@ -2206,12 +2200,14 @@
       var bench = parseInt(SkyrimForms.kwCraftingSmithingArmorTable, 16);
       overrideCraftingRecipes(this.cobj, armor, bench, perk, input, this.patchFile);
     }
-    getArmorMaterialOverride(name) {
+    getArmorMaterialOverride(armor) {
+      var full = this.names[armor];
+      var edid = xelib.EditorID(armor);
       var override = this.rules.materialOverrides.find((o) => {
-        if (o.edid && o.edid !== null)
-          return name.includes(o.edid);
+        if (o.edid)
+          return edid.includes(o.edid);
         else
-          return name.includes(o.substring);
+          return full.includes(o.substring);
       });
       return override ? override.material : null;
     }
@@ -2329,8 +2325,7 @@
         kwda: SkyrimForms.kwArmorMaterialBlades,
         input: SkyrimForms.ingotSteel,
         perk: SkyrimForms.perkSmithingSteel,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Daedric",
         kwda: SkyrimForms.kwArmorMaterialDaedric,
@@ -2343,141 +2338,119 @@
         kwda: SkyrimForms.kwArmorMaterialDragonplate,
         input: SkyrimForms.dragonbone,
         perk: SkyrimForms.perkSmithingDragon,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Dwarven",
         kwda: SkyrimForms.kwArmorMaterialDwarven,
         input: SkyrimForms.ingotDwarven,
         perk: SkyrimForms.perkSmithingDwarven,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Ebony",
         kwda: SkyrimForms.kwArmorMaterialEbony,
         input: SkyrimForms.ingotEbony,
         perk: SkyrimForms.perkSmithingEbony,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Falmer Hardened",
         kwda: SkyrimForms.kwArmorMaterialFalmerHardened,
         input: SkyrimForms.chaurusChitin,
         perk: SkyrimForms.perkSmithingElven,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Falmer Heavy",
         kwda: SkyrimForms.kwArmorMaterialFalmerHeavy,
         input: SkyrimForms.chaurusChitin,
         perk: SkyrimForms.perkSmithingElven,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Falmer",
         kwda: SkyrimForms.kwArmorMaterialFalmerHeavyOriginal,
         input: SkyrimForms.chaurusChitin,
         perk: SkyrimForms.perkSmithingElven,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Imperial Heavy",
         kwda: SkyrimForms.kwArmorMaterialImperialHeavy,
         input: SkyrimForms.ingotSteel,
         perk: SkyrimForms.perkSmithingSteel,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Iron",
         kwda: SkyrimForms.kwArmorMaterialIron,
         input: SkyrimForms.ingotIron,
-        perk: null,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Iron Banded",
         kwda: SkyrimForms.kwArmorMaterialIronBanded,
         input: SkyrimForms.ingotIron,
-        perk: null,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Nordic",
         kwda: SkyrimForms.kwArmorMaterialNordicHeavy,
         input: SkyrimForms.ingotQuicksilver,
         perk: SkyrimForms.perkSmithingAdvanced,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Orcish",
         kwda: SkyrimForms.kwArmorMaterialOrcish,
         input: SkyrimForms.ingotOrichalcum,
         perk: SkyrimForms.perkSmithingOrcish,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Stalhrim Heavy",
         kwda: SkyrimForms.kwArmorMaterialStalhrimHeavy,
         input: SkyrimForms.oreStalhrim,
         perk: SkyrimForms.perkSmithingAdvanced,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Steel",
         kwda: SkyrimForms.kwArmorMaterialSteel,
         input: SkyrimForms.ingotSteel,
         perk: SkyrimForms.perkSmithingSteel,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Steel Plate",
         kwda: SkyrimForms.kwArmorMaterialSteelPlate,
         input: SkyrimForms.ingotCorundum,
         perk: SkyrimForms.perkSmithingAdvanced,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Dawnguard",
         kwda: SkyrimForms.kwDLC1ArmorMaterialDawnguard,
         input: SkyrimForms.ingotSteel,
         perk: SkyrimForms.perkSmithingSteel,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Dawnguard Hunter",
         kwda: SkyrimForms.kwDLC1ArmorMaterialHunter,
         input: SkyrimForms.ingotSteel,
         perk: SkyrimForms.perkSmithingSteel,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Bonemold Heavy",
         kwda: SkyrimForms.kwDLC2ArmorMaterialBonemoldHeavy,
         input: SkyrimForms.netchLeather,
         perk: SkyrimForms.perkSmithingAdvanced,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Chitin Heavy",
         kwda: SkyrimForms.kwDLC2ArmorMaterialChitinHeavy,
         input: SkyrimForms.chitinPlate,
         perk: SkyrimForms.perkSmithingElven,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Ancient Nord",
         kwda: SkyrimForms.kwWAF_ArmorMaterialDraugr,
         input: SkyrimForms.ingotSteel,
         perk: SkyrimForms.perkSmithingSteel,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Wolf",
         kwda: SkyrimForms.kwWAF_ArmorWolf,
         input: SkyrimForms.ingotSteel,
         perk: SkyrimForms.perkSmithingSteel,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }];
       this.lightMaterialsMap = [{
         name: "Shrouded",
@@ -2491,57 +2464,47 @@
         kwda: SkyrimForms.kwArmorMaterialDragonscale,
         input: SkyrimForms.dragonscale,
         perk: SkyrimForms.perkSmithingDragon,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Elven",
         kwda: SkyrimForms.kwArmorMaterialElven,
         input: SkyrimForms.ingotMoonstone,
         perk: SkyrimForms.perkSmithingElven,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Elven Gilded",
         kwda: SkyrimForms.kwArmorMaterialElvenGilded,
         input: SkyrimForms.ingotMoonstone,
         perk: SkyrimForms.perkSmithingElven,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Forsworn",
         kwda: SkyrimForms.kwArmorMaterialForsworn,
         input: SkyrimForms.leatherStrips,
-        perk: null,
-        bnam: SkyrimForms.kwCraftingTanningRack,
-        func: null
+        bnam: SkyrimForms.kwCraftingTanningRack
       }, {
         name: "Glass",
         kwda: SkyrimForms.kwArmorMaterialGlass,
         input: SkyrimForms.ingotMalachite,
         perk: SkyrimForms.perkSmithingGlass,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Hide",
         kwda: SkyrimForms.kwArmorMaterialHide,
         input: SkyrimForms.leatherStrips,
-        perk: null,
-        bnam: SkyrimForms.kwCraftingTanningRack,
-        func: null
+        bnam: SkyrimForms.kwCraftingTanningRack
       }, {
         name: "Imperial Light",
         kwda: SkyrimForms.kwArmorMaterialImperialLight,
         input: SkyrimForms.ingotSteel,
         perk: SkyrimForms.perkSmithingSteel,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Imperial Studded",
         kwda: SkyrimForms.kwArmorMaterialImperialStudded,
         input: SkyrimForms.leatherStrips,
         perk: SkyrimForms.perkSmithingLeather,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Leather",
         kwda: SkyrimForms.kwArmorMaterialLeather,
@@ -2561,22 +2524,18 @@
         kwda: SkyrimForms.kwArmorMaterialScaled,
         input: SkyrimForms.ingotCorundum,
         perk: SkyrimForms.perkSmithingAdvanced,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Stalhrim Light",
         kwda: SkyrimForms.kwArmorMaterialStalhrimLight,
         input: SkyrimForms.oreStalhrim,
         perk: SkyrimForms.perkSmithingAdvanced,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Stormcloak",
         kwda: SkyrimForms.kwArmorMaterialStormcloak,
         input: SkyrimForms.ingotIron,
-        perk: null,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Studded",
         kwda: SkyrimForms.kwArmorMaterialStudded,
@@ -2603,22 +2562,18 @@
         kwda: SkyrimForms.kwDLC2ArmorMaterialBonemoldLight,
         input: SkyrimForms.netchLeather,
         perk: SkyrimForms.perkSmithingAdvanced,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Chitin",
         kwda: SkyrimForms.kwDLC2ArmorMaterialChitinLight,
         input: SkyrimForms.chitinPlate,
         perk: SkyrimForms.perkSmithingElven,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }, {
         name: "Guard",
         kwda: SkyrimForms.kwWAF_ArmorMaterialGuard,
         input: SkyrimForms.ingotIron,
-        perk: null,
-        bnam: SkyrimForms.kwCraftingSmelter,
-        func: null
+        bnam: SkyrimForms.kwCraftingSmelter
       }];
       this.armorMaterialsMap = this.lightMaterialsMap.concat(this.heavyMaterialsMap);
     }
@@ -2643,10 +2598,6 @@
       this.rules = locals.rules.weapons;
       this.settings = settings;
       this.lang = settings.lang;
-      this.keywordMaterialMap = null;
-      this.keywordTypesMap = null;
-      this.vanillaTypesMap = null;
-      this.skyreTypesMap = null;
       this.createKeywordMaps();
       Object.keys(this.modifiers).map((k) => {
         if (this.modifiers[k] < 0) {
@@ -2808,16 +2759,6 @@
         if (xelib.HasArrayItem(weapon, "KWDA", "", e.kwda))
           return false;
         if (xelib.EditorID(weapon).toLowerCase().includes(e.name.toLowerCase()) || xelib.FullName(weapon).includes(e.name)) {
-          const weapTypeIndex = getKeyword(weapon, "WeapType");
-          var weapType;
-          if (xelib.GetValue(weapon, Records.DataSkill).toUpperCase().includes("ONE"))
-            weapType = SkyrimForms.kwdaWeapTypeAny1H;
-          else
-            weapType = SkyrimForms.kwdaWeapTypeAny2H;
-          if (weapTypeIndex !== null) {
-            xelib.RemoveElement(weapon, weapTypeIndex);
-            xelib.AddArrayItem(weapon, Records.Keywords, "", weapType);
-          }
           xelib.AddArrayItem(weapon, "KWDA", "", e.kwda);
           if (e.kwda === SkyrimForms.kwWeapTypeYari && !xelib.HasScript(weapon, "xxxPassiveYari")) {
             addPerkScript(weapon, "xxxPassiveYari", "xxxPassiveYariEffect", SkyrimForms.perkWeaponYari);
@@ -2831,11 +2772,11 @@
     }
     getBaseDamage(weapon) {
       var kwda = getKwda(weapon);
-      var base = null;
-      if (kwda(SkyrimForms.kwWeapTypeSword) || kwda(SkyrimForms.kwWeapTypeWaraxe) || kwda(SkyrimForms.kwWeapTypeMace) || kwda(SkyrimForms.kwWeapTypeDagger)) {
+      var base;
+      if (kwda(SkyrimForms.kwWeapTypeSword) || kwda(SkyrimForms.kwWeapTypeWaraxe) || kwda(SkyrimForms.kwWeapTypeMace) || kwda(SkyrimForms.kwWeapTypeDagger) || kwda(SkyrimForms.kwdaWeapTypeAny1H)) {
         base = this.baseStats.damage.oneHanded;
       }
-      if (kwda(SkyrimForms.kwWeapTypeGreatsword) || kwda(SkyrimForms.kwWeapTypeWarhammer) || kwda(SkyrimForms.kwWeapTypeBattleaxe)) {
+      if (kwda(SkyrimForms.kwWeapTypeGreatsword) || kwda(SkyrimForms.kwWeapTypeWarhammer) || kwda(SkyrimForms.kwWeapTypeBattleaxe) || kwda(SkyrimForms.kwdaWeapTypeAny1H)) {
         base = this.baseStats.damage.twoHanded;
       }
       if (kwda(SkyrimForms.kwWeapTypeCrossbow)) {
@@ -2850,7 +2791,7 @@
       return base;
     }
     getWeaponMaterialDamageModifier(weapon) {
-      var modifier = null;
+      var modifier;
       var edid = xelib.EditorID(weapon);
       if (xelib.GetFlag(weapon, "DNAM\\Flags2", "Bound Weapon")) {
         modifier = 0;
@@ -3508,6 +3449,18 @@
         xelib.AddElementValue(weapon, "KWDA\\.", SkyrimForms.kwWeapTypeBoundWeapon);
       }
     }
+    patchWeaponType(weapon) {
+      const weapTypeIndex = findKeyword(weapon, "WeapType");
+      var weapType;
+      if (xelib.GetValue(weapon, Records.DataSkill).toUpperCase().includes("ONE"))
+        weapType = SkyrimForms.kwdaWeapTypeAny1H;
+      else
+        weapType = SkyrimForms.kwdaWeapTypeAny2H;
+      if (weapTypeIndex !== null) {
+        xelib.RemoveElement(weapon, weapTypeIndex);
+        xelib.AddArrayItem(weapon, Records.Keywords, "", weapType);
+      }
+    }
     patchFunc(weapon) {
       this.names[weapon] = xelib.FullName(weapon) || "";
       if (xelib.HasElement(weapon, "CNAM")) {
@@ -3661,8 +3614,7 @@
       }, {
         name: "Iron",
         kwda: SkyrimForms.kwWAF_TreatAsMaterialIron,
-        input: SkyrimForms.ingotIron,
-        perk: null
+        input: SkyrimForms.ingotIron
       }, {
         name: "Orcish",
         kwda: SkyrimForms.kwWAF_TreatAsMaterialOrcish,
@@ -3681,8 +3633,7 @@
       }, {
         name: "Forsworn",
         kwda: SkyrimForms.kwWAF_WeapMaterialForsworn,
-        input: SkyrimForms.charcoal,
-        perk: null
+        input: SkyrimForms.charcoal
       }, {
         name: "Daedric",
         kwda: SkyrimForms.kwWeapMaterialDaedric,
@@ -3741,8 +3692,7 @@
       }, {
         name: "Iron",
         kwda: SkyrimForms.kwWeapMaterialIron,
-        input: SkyrimForms.ingotIron,
-        perk: null
+        input: SkyrimForms.ingotIron
       }, {
         name: "Orcish",
         kwda: SkyrimForms.kwWeapMaterialOrcish,
@@ -3766,8 +3716,7 @@
       }, {
         name: "Wood",
         kwda: SkyrimForms.kwWeapMaterialWood,
-        input: SkyrimForms.charcoal,
-        perk: null
+        input: SkyrimForms.charcoal
       }, {
         name: "Stalhrim",
         kwda: SkyrimForms.kwDLC2WeaponMaterialStalhrim,
@@ -4006,9 +3955,7 @@
       return true;
     }
     patchFunc(npc) {
-      const masterRecord = xelib.GetMasterRecord(npc);
       var overrides = xelib.GetOverrides(npc).reverse();
-      this.log(`processing record ${xelib.EditorID(npc)}`);
       overrides.some((patchRecord) => {
         var formID = xelib.ElementToJSON(xelib.GetElement(patchRecord, "Record Header\\FormID"));
         if (!this.settings.npc.plugins.find((val) => {
