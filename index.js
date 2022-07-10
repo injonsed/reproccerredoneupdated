@@ -364,9 +364,11 @@
     Class: "CNAM",
     Keywords: "KWDA",
     Keyword: (index) => `KWDA\\${index}`,
+    EquipType: "ETYP",
     Name: "FULL",
     ShortName: "SHRT",
     Description: "DESC",
+    TemplateArmor: "TNAM",
     Data: "DNAM",
     DataSkill: "DNAM\\Skill",
     PlayerSkills: "DNAM",
@@ -1835,6 +1837,9 @@
       })) {
         return false;
       }
+      if (xelib.HasArrayItem(record, "KWDA", "", SkyrimForms.kwJewelry)) {
+        return false;
+      }
       if (xelib.HasElement(record, "TNAM")) {
         return true;
       }
@@ -1843,9 +1848,6 @@
       }
       if (xelib.HasArrayItem(record, "KWDA", "", SkyrimForms.kwVendorItemClothing)) {
         return true;
-      }
-      if (xelib.HasArrayItem(record, "KWDA", "", SkyrimForms.kwJewelry)) {
-        return false;
       }
       var keywords = [SkyrimForms.kwArmorHeavy, SkyrimForms.kwArmorLight, SkyrimForms.kwArmorSlotShield];
       if (!keywords.some((kwda) => {
@@ -2135,10 +2137,10 @@
     }
     getMaterialArmorModifier(armor) {
       var armorRating = getValueFromName(this.rules.materials, this.names[armor], "name", "armor");
-      if (armorRating !== null)
+      if (armorRating >= 0)
         return armorRating;
       armorRating = getValueFromName(this.rules.materials, xelib.EditorID(armor), "name", "armor");
-      if (armorRating !== null)
+      if (armorRating >= 0)
         return armorRating;
       this.armorMaterialsMap.some((e) => {
         if (!xelib.HasArrayItem(armor, "KWDA", "", e.kwda)) {
@@ -2147,7 +2149,7 @@
         armorRating = getValueFromName(this.rules.materials, e.name, "name", "armor");
         return true;
       });
-      if (armorRating !== null) {
+      if (armorRating >= 0) {
         return armorRating;
       }
       if (!xelib.GetFlag(armor, "Record Header\\Record Flags", "Non-Playable")) {
@@ -2164,6 +2166,8 @@
       if (rating > 0) {
         xelib.SetValue(armor, "DNAM", "".concat(String(rating)));
       } else if (rating === 0 && !xelib.GetFlag(armor, "Record Header\\Record Flags", "Non-Playable")) {
+        this.log(armor, "New armor rating calculation result is zero, armor rating not modified!");
+      } else if (isNaN(rating)) {
         this.log(armor, "New armor rating calculation result is zero, armor rating not modified!");
       }
     }
@@ -2298,10 +2302,12 @@
     }
     patchFunc(armor) {
       this.names[armor] = xelib.FullName(armor);
-      if (xelib.HasElement(armor, "TNAM")) {
+      let equipType = xelib.FullName(xelib.GetElement(armor, Records.EquipType)).toUpperCase();
+      if (equipType.includes("SHIELD")) {
         this.patchShieldWeight(armor);
         return;
-      } else if (xelib.HasElement(armor, "KWDA") && xelib.HasArrayItem(armor, "KWDA", "", SkyrimForms.kwVendorItemClothing) && !xelib.GetFlag(armor, "Record Header\\Record Flags", "Non-Playable")) {
+      }
+      if (xelib.HasElement(armor, Records.Keywords) && xelib.HasArrayItem(armor, Records.Keywords, "", SkyrimForms.kwVendorItemClothing) && !xelib.GetFlag(armor, "Record Header\\Record Flags", "Non-Playable")) {
         this.patchMasqueradeKeywords(armor);
         this.processClothing(armor);
         return;
@@ -2578,9 +2584,9 @@
       this.armorMaterialsMap = this.lightMaterialsMap.concat(this.heavyMaterialsMap);
     }
     log(armor, message) {
-      var name = this.names[armor];
+      var name = xelib.FullName(armor);
       var formId = xelib.GetHexFormID(armor);
-      this.helpers.logMessage("--> ".concat(name, "(").concat(formId, "): ").concat(message));
+      this.helpers.logMessage(`--> ${name} (${formId}): ${message}`);
     }
   };
 
@@ -2904,11 +2910,13 @@
     }
     patchWeaponReach(weapon) {
       var reach = this.getWeaponTypeFloatValueModifier(weapon, "reach");
-      xelib.SetFloatValue(weapon, "DNAM\\Reach", reach);
+      if (reach)
+        xelib.SetFloatValue(weapon, "DNAM\\Reach", reach);
     }
     patchWeaponSpeed(weapon) {
       var speed = this.getWeaponTypeFloatValueModifier(weapon, "speed");
-      xelib.SetFloatValue(weapon, "DNAM\\Speed", speed);
+      if (speed)
+        xelib.SetFloatValue(weapon, "DNAM\\Speed", speed);
     }
     applyRecurveCrossbowChanges(weapon) {
       var baseDamage = this.getBaseDamage(weapon);
@@ -3993,7 +4001,7 @@
       },
       usePriceLimits: true
     },
-    enabled: true
+    enabled: false
   };
   var armorSettings = {
     baseStats: {

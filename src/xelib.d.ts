@@ -62,6 +62,9 @@ declare namespace xelib {
     function GetOverrides(record: handle): Array<handle>;
     function GetWinningOverride(id: handle): handle;
 
+    /**
+     * Resolves the flags element at @path, and gets the state of flag @name.
+    */
     function GetFlag(record: handle, path: string, name: string): boolean;
     function SetFlag(record: handle, path: string, name: string, val: boolean): void;
 

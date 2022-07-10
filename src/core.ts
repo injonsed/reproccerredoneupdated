@@ -505,12 +505,18 @@ export const Records = {
      * */
     Keywords: 'KWDA',
     Keyword: (index: number) => `KWDA\\${index}`,
+    /***/
+    EquipType: 'ETYP',
     /** Value: string */
     Name: 'FULL',
     /** Value: string */
     ShortName: 'SHRT',
     /** Value: string */
     Description: 'DESC',
+    /**
+     * Value: handle
+    */
+    TemplateArmor: 'TNAM',
     /** Object */
     Data: 'DNAM',
     /** Value: string */

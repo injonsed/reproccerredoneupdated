@@ -431,12 +431,14 @@ export default class WeaponPatcher implements ZEditPatcher {
 
     patchWeaponReach(weapon: handle): void {
         var reach = this.getWeaponTypeFloatValueModifier(weapon, 'reach');
-        xelib.SetFloatValue(weapon, 'DNAM\\Reach', reach);
+        if (reach)
+            xelib.SetFloatValue(weapon, 'DNAM\\Reach', reach);
     }
 
     patchWeaponSpeed(weapon: handle): void {
         var speed = this.getWeaponTypeFloatValueModifier(weapon, 'speed');
-        xelib.SetFloatValue(weapon, 'DNAM\\Speed', speed);
+        if (speed)
+            xelib.SetFloatValue(weapon, 'DNAM\\Speed', speed);
     }
 
     applyRecurveCrossbowChanges(weapon: handle): void {

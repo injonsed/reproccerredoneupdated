@@ -19,7 +19,7 @@ var alchemySettings: AlchemySettings = {
         },
         usePriceLimits: true
     },
-    enabled: true
+    enabled: false
 };
 
 var armorSettings: ArmorSettings = {

@@ -1,7 +1,7 @@
 import {
     addPerkScript, getValueFromName, getKwda, updateHasPerkCondition, createHasPerkCondition,
     createGetItemCountCondition, createGetEquippedCondition, overrideCraftingRecipes,
-    removeTemperingConditions, SkyrimForms
+    removeTemperingConditions, SkyrimForms, Records
 } from "./core";
 import { LocData } from "./localization";
 
@@ -85,12 +85,17 @@ export default class ArmorPatcher implements ZEditPatcher {
         var name = xelib.FullName(record);
         var edid = xelib.EditorID(record);
 
-        if (name && this.rules.excludedArmor.find((e) => {
+        // ignore armor from excluded list
+        if (name && this.rules.excludedArmor.find((e: IJSONElement) => {
             if (e.edid && e.edid !== null)
                 return edid.includes(e.edid);
             else
                 return name.includes(e.name);
         })) {
+            return false;
+        }
+
+        if (xelib.HasArrayItem(record, 'KWDA', '', SkyrimForms.kwJewelry)) {
             return false;
         }
 
@@ -104,10 +109,6 @@ export default class ArmorPatcher implements ZEditPatcher {
 
         if (xelib.HasArrayItem(record, 'KWDA', '', SkyrimForms.kwVendorItemClothing)) {
             return true;
-        }
-
-        if (xelib.HasArrayItem(record, 'KWDA', '', SkyrimForms.kwJewelry)) {
-            return false;
         }
 
         var keywords = [SkyrimForms.kwArmorHeavy, SkyrimForms.kwArmorLight, SkyrimForms.kwArmorSlotShield];
@@ -470,11 +471,11 @@ export default class ArmorPatcher implements ZEditPatcher {
     getMaterialArmorModifier(armor: handle): number {
         var armorRating = getValueFromName<number>(this.rules.materials, this.names[armor], 'name', 'armor');
 
-        if (armorRating !== null)
+        if (armorRating >= 0)
             return armorRating;
 
         armorRating = getValueFromName<number>(this.rules.materials, xelib.EditorID(armor), 'name', 'armor');
-        if (armorRating !== null)
+        if (armorRating >= 0)
             return armorRating;
 
         this.armorMaterialsMap.some((e) => {
@@ -486,7 +487,7 @@ export default class ArmorPatcher implements ZEditPatcher {
             return true;
         });
 
-        if (armorRating !== null) {
+        if (armorRating >= 0) {
             return armorRating;
         }
 
@@ -508,6 +509,8 @@ export default class ArmorPatcher implements ZEditPatcher {
         if (rating > 0) {
             xelib.SetValue(armor, 'DNAM', "".concat(String(rating)));
         } else if (rating === 0 && !xelib.GetFlag(armor, 'Record Header\\Record Flags', 'Non-Playable')) {
+            this.log(armor, "New armor rating calculation result is zero, armor rating not modified!");
+        } else if (isNaN(rating)) {
             this.log(armor, "New armor rating calculation result is zero, armor rating not modified!");
         }
     }
@@ -670,14 +673,16 @@ export default class ArmorPatcher implements ZEditPatcher {
 
     patchFunc(armor: handle): void {
         this.names[armor] = xelib.FullName(armor);
+        let equipType = xelib.FullName(xelib.GetElement(armor, Records.EquipType)).toUpperCase();
 
-        if (xelib.HasElement(armor, 'TNAM')) {
+        if (equipType.includes("SHIELD")) {
             this.patchShieldWeight(armor);
             return;
-        } else if (xelib.HasElement(armor, 'KWDA') && xelib.HasArrayItem(armor, 'KWDA', '', SkyrimForms.kwVendorItemClothing)
+        }
+
+        if (xelib.HasElement(armor, Records.Keywords) && xelib.HasArrayItem(armor, Records.Keywords, '', SkyrimForms.kwVendorItemClothing)
                      && !xelib.GetFlag(armor, 'Record Header\\Record Flags', 'Non-Playable')) {
             this.patchMasqueradeKeywords(armor);
-
             this.processClothing(armor);
 
             return;
@@ -963,8 +968,8 @@ export default class ArmorPatcher implements ZEditPatcher {
     }
 
     log(armor: handle, message: string) {
-        var name = this.names[armor];
+        var name = xelib.FullName(armor);
         var formId = xelib.GetHexFormID(armor);
-        this.helpers.logMessage("--> ".concat(name, "(").concat(formId, "): ").concat(message));
+        this.helpers.logMessage(`--> ${name} (${formId}): ${message}`);
     }
 }

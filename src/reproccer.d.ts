@@ -9,7 +9,7 @@ declare interface AlchemyBaseStats {
 
 declare interface AlchemySettings {
     baseStats: AlchemyBaseStats,
-    enabled: true
+    enabled: boolean
 }
 
 declare interface ArmorBaseStats {
